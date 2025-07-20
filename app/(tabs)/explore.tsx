@@ -32,39 +32,35 @@ export default function ProfileScreen() {
       
       <View style={styles.content}>
         <View style={styles.profileCard}>
-          <Text style={styles.sectionTitle}>User Information</Text>
-          <View style={styles.infoRow}>
-            <Text style={styles.label}>Name:</Text>
-            <Text style={styles.value}>{userProfile?.full_name || 'Not set'}</Text>
-          </View>
-          <View style={styles.infoRow}>
-            <Text style={styles.label}>Email:</Text>
-            <Text style={styles.value}>{userProfile?.email}</Text>
-          </View>
-          <View style={styles.infoRow}>
-            <Text style={styles.label}>Role:</Text>
-            <View style={[styles.roleBadge, { backgroundColor: getRoleColor(userProfile?.role) }]}>
-              <Text style={styles.roleText}>{userProfile?.role}</Text>
+          <View style={styles.avatarContainer}>
+            <View style={styles.avatar}>
+              <Text style={styles.avatarText}>
+                {userProfile?.full_name?.charAt(0) || userProfile?.email?.charAt(0) || '?'}
+              </Text>
+            </View>
+            <View style={styles.userInfo}>
+              <Text style={styles.userName}>{userProfile?.full_name || 'Anonymous User'}</Text>
+              <Text style={styles.userEmail}>{userProfile?.email}</Text>
+              <View style={[styles.roleBadge, { backgroundColor: getRoleColor(userProfile?.role) }]}>
+                <Text style={styles.roleText}>{userProfile?.role}</Text>
+              </View>
             </View>
           </View>
         </View>
 
         <View style={styles.actionsCard}>
-          <Text style={styles.sectionTitle}>Actions</Text>
+          <Text style={styles.sectionTitle}>Quick Actions</Text>
+          <TouchableOpacity style={styles.actionButton}>
+            <Text style={styles.actionButtonText}>✏️ Edit Profile</Text>
+          </TouchableOpacity>
           <TouchableOpacity 
             style={styles.actionButton}
-            onPress={() => router.push('/(tabs)/location-selector')}
+            onPress={() => router.push('/(tabs)/settings')}
           >
-            <Text style={styles.actionButtonText}>📍 Change Location</Text>
+            <Text style={styles.actionButtonText}>⚙️ Settings</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.actionButton}>
-            <Text style={styles.actionButtonText}>Edit Profile</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.actionButton}>
-            <Text style={styles.actionButtonText}>Settings</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.actionButton}>
-            <Text style={styles.actionButtonText}>Help & Support</Text>
+            <Text style={styles.actionButtonText}>❓ Help & Support</Text>
           </TouchableOpacity>
         </View>
 
@@ -89,100 +85,136 @@ const getRoleColor = (role?: string) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f9fafb',
+    backgroundColor: '#f8fafc',
   },
   header: {
-    paddingHorizontal: 16,
-    paddingVertical: 16,
+    paddingHorizontal: 20,
+    paddingVertical: 20,
+    paddingTop: 60,
     backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e5e7eb',
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 5,
   },
   title: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: 'bold',
-    color: '#111827',
+    color: '#1e293b',
   },
   content: {
     flex: 1,
-    padding: 16,
+    padding: 20,
+    paddingTop: 16,
   },
   profileCard: {
     backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 16,
+    borderRadius: 20,
+    padding: 24,
     marginBottom: 16,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
+    shadowRadius: 12,
+    elevation: 5,
+  },
+  avatarContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  avatar: {
+    width: 80,
+    height: 80,
+    backgroundColor: '#3b82f6',
+    borderRadius: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 20,
+  },
+  avatarText: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: '#fff',
+  },
+  userInfo: {
+    flex: 1,
+  },
+  userName: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#1e293b',
+    marginBottom: 4,
+  },
+  userEmail: {
+    fontSize: 16,
+    color: '#64748b',
+    marginBottom: 12,
   },
   actionsCard: {
     backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 16,
+    borderRadius: 20,
+    padding: 20,
     marginBottom: 16,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
+    shadowRadius: 12,
+    elevation: 5,
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: 'bold',
-    color: '#111827',
-    marginBottom: 16,
-  },
-  infoRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f3f4f6',
-  },
-  label: {
-    fontSize: 16,
-    color: '#6b7280',
-  },
-  value: {
-    fontSize: 16,
-    color: '#111827',
-    fontWeight: '500',
+    color: '#1e293b',
+    marginBottom: 20,
   },
   roleBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
+    alignSelf: 'flex-start',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
   },
   roleText: {
     color: '#fff',
-    fontSize: 14,
-    fontWeight: '600',
-    textTransform: 'capitalize',
+    fontSize: 12,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   actionButton: {
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f3f4f6',
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    backgroundColor: '#f8fafc',
+    borderRadius: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
   },
   actionButtonText: {
     fontSize: 16,
-    color: '#2563eb',
+    color: '#475569',
+    fontWeight: '600',
+    flex: 1,
   },
   signOutButton: {
-    backgroundColor: '#dc2626',
-    borderRadius: 12,
-    padding: 16,
+    backgroundColor: '#ef4444',
+    borderRadius: 20,
+    padding: 20,
     alignItems: 'center',
     marginTop: 'auto',
+    shadowColor: '#ef4444',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 5,
   },
   signOutButtonText: {
     color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 18,
+    fontWeight: '700',
   },
 });

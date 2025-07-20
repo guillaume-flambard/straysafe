@@ -16,7 +16,7 @@ BEGIN
     
     -- Insert sample dogs for Bangkok
     INSERT INTO dogs (name, gender, status, birth_date, sterilized, location_id, location_text, notes, tags) VALUES
-    ('Mango', 'male', 'available', '2023-03-10', true, bangkok_id, 'Chatuchak area', 'Très sociable, aime jouer avec les autres chiens.', ARRAY['friendly', 'playful', 'city_dog']),
-    ('Nong', 'female', 'fostered', '2024-02-14', false, bangkok_id, 'Sukhumvit', 'Chienne calme, parfaite pour appartement.', ARRAY['calm', 'apartment_friendly', 'gentle']);
+    ('Mango', 'male', 'available', '2023-03-10', true, bangkok_id, 'Chatuchak area', 'Very social dog, loves playing with other dogs.', ARRAY['friendly', 'playful', 'city_dog']),
+    ('Nong', 'female', 'fostered', '2024-02-14', false, bangkok_id, 'Sukhumvit', 'Calm dog, perfect for apartments.', ARRAY['calm', 'apartment_friendly', 'gentle']);
     
 END $$;

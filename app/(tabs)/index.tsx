@@ -49,28 +49,51 @@ export default function DogsScreen() {
   };
 
   const renderDog = ({ item }: { item: Dog }) => (
-    <TouchableOpacity style={styles.dogCard}>
-      <View style={styles.dogHeader}>
-        <Text style={styles.dogName}>{item.name}</Text>
-        <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) }]}>
-          <Text style={styles.statusText}>{item.status}</Text>
-        </View>
+    <TouchableOpacity style={styles.dogCard} activeOpacity={0.7}>
+      <View style={styles.dogImagePlaceholder}>
+        <Text style={styles.dogInitial}>{item.name.charAt(0)}</Text>
       </View>
-      <Text style={styles.dogInfo}>
-        {item.gender} • {item.sterilized ? 'Sterilized' : 'Not sterilized'}
-      </Text>
-      {item.location_text && (
-        <Text style={styles.dogLocation}>{item.location_text}</Text>
-      )}
-      {item.tags.length > 0 && (
-        <View style={styles.tagsContainer}>
-          {item.tags.map((tag, index) => (
-            <View key={index} style={styles.tag}>
-              <Text style={styles.tagText}>{tag}</Text>
-            </View>
-          ))}
+      
+      <View style={styles.dogContent}>
+        <View style={styles.dogHeader}>
+          <Text style={styles.dogName}>{item.name}</Text>
+          <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) }]}>
+            <Text style={styles.statusText}>{item.status}</Text>
+          </View>
         </View>
-      )}
+        
+        <View style={styles.dogInfo}>
+          <Text style={styles.dogDetail}>
+            {item.gender === 'male' ? '♂️' : '♀️'} {item.gender} • {item.sterilized ? '✅ Sterilized' : '❌ Not sterilized'}
+          </Text>
+          {item.birth_date && (
+            <Text style={styles.dogAge}>
+              🎂 {new Date().getFullYear() - new Date(item.birth_date).getFullYear()} years old
+            </Text>
+          )}
+        </View>
+        
+        {item.location_text && (
+          <Text style={styles.dogLocation}>📍 {item.location_text}</Text>
+        )}
+        
+        {item.notes && (
+          <Text style={styles.dogNotes} numberOfLines={2}>💭 {item.notes}</Text>
+        )}
+        
+        {item.tags.length > 0 && (
+          <View style={styles.tagsContainer}>
+            {item.tags.slice(0, 3).map((tag, index) => (
+              <View key={index} style={styles.tag}>
+                <Text style={styles.tagText}>{tag}</Text>
+              </View>
+            ))}
+            {item.tags.length > 3 && (
+              <Text style={styles.moreTagsText}>+{item.tags.length - 3} more</Text>
+            )}
+          </View>
+        )}
+      </View>
     </TouchableOpacity>
   );
 
@@ -112,51 +135,85 @@ export default function DogsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f9fafb',
+    backgroundColor: '#f8fafc',
   },
   centerContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: '#f8fafc',
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 16,
+    paddingHorizontal: 20,
+    paddingVertical: 20,
+    paddingTop: 60,
     backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e5e7eb',
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 5,
   },
   title: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: 'bold',
-    color: '#111827',
+    color: '#1e293b',
   },
   addButton: {
-    backgroundColor: '#2563eb',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 8,
+    backgroundColor: '#3b82f6',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 25,
+    shadowColor: '#3b82f6',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 5,
   },
   addButtonText: {
     color: '#fff',
-    fontWeight: '600',
+    fontWeight: '700',
+    fontSize: 14,
   },
   listContainer: {
-    padding: 16,
+    padding: 20,
+    paddingTop: 16,
   },
   dogCard: {
     backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
+    borderRadius: 20,
+    marginBottom: 16,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
+    shadowRadius: 12,
+    elevation: 5,
+    overflow: 'hidden',
+    flexDirection: 'row',
+  },
+  dogImagePlaceholder: {
+    width: 80,
+    height: 80,
+    backgroundColor: '#e0e7ff',
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    margin: 16,
+  },
+  dogInitial: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#3b82f6',
+  },
+  dogContent: {
+    flex: 1,
+    padding: 16,
+    paddingLeft: 0,
   },
   dogHeader: {
     flexDirection: 'row',
@@ -165,59 +222,88 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   dogName: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: 'bold',
-    color: '#111827',
+    color: '#1e293b',
+    flex: 1,
   },
   statusBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    marginLeft: 8,
   },
   statusText: {
     color: '#fff',
-    fontSize: 12,
-    fontWeight: '600',
-    textTransform: 'capitalize',
+    fontSize: 11,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   dogInfo: {
+    marginBottom: 8,
+  },
+  dogDetail: {
     fontSize: 14,
-    color: '#6b7280',
+    color: '#64748b',
     marginBottom: 4,
-    textTransform: 'capitalize',
+  },
+  dogAge: {
+    fontSize: 13,
+    color: '#64748b',
   },
   dogLocation: {
-    fontSize: 14,
-    color: '#6b7280',
+    fontSize: 13,
+    color: '#64748b',
     marginBottom: 8,
+  },
+  dogNotes: {
+    fontSize: 13,
+    color: '#64748b',
+    fontStyle: 'italic',
+    marginBottom: 12,
+    lineHeight: 18,
   },
   tagsContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 6,
+    alignItems: 'center',
   },
   tag: {
-    backgroundColor: '#e5e7eb',
-    paddingHorizontal: 8,
+    backgroundColor: '#f1f5f9',
+    paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
   },
   tagText: {
-    fontSize: 12,
-    color: '#374151',
+    fontSize: 11,
+    color: '#475569',
+    fontWeight: '600',
+  },
+  moreTagsText: {
+    fontSize: 11,
+    color: '#94a3b8',
+    fontWeight: '500',
   },
   emptyContainer: {
     alignItems: 'center',
-    paddingVertical: 64,
+    paddingVertical: 80,
+    paddingHorizontal: 40,
   },
   emptyText: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#6b7280',
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#64748b',
     marginBottom: 8,
+    textAlign: 'center',
   },
   emptySubtext: {
-    fontSize: 14,
-    color: '#9ca3af',
+    fontSize: 16,
+    color: '#94a3b8',
+    textAlign: 'center',
+    lineHeight: 24,
   },
 });
