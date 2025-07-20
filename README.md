@@ -1,50 +1,118 @@
-# Welcome to your Expo app 👋
+# 🐾 StraySafe
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+A mobile-first collaborative app to monitor, manage and protect stray or fostered dogs in specific regions.
 
-## Get started
+## 🚀 Getting Started
 
-1. Install dependencies
+### Prerequisites
 
-   ```bash
-   npm install
-   ```
+- Node.js (v18 or higher)
+- npm or yarn
+- Expo CLI (`npm install -g @expo/cli`)
+- Supabase account
 
-2. Start the app
+### Installation
 
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
-
+1. Clone the repository:
 ```bash
-npm run reset-project
+git clone <repository-url>
+cd straysafe
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+2. Install dependencies:
+```bash
+npm install
+```
 
-## Learn more
+3. Set up environment variables:
+```bash
+cp .env.example .env
+```
 
-To learn more about developing your project with Expo, look at the following resources:
+Edit `.env` and add your Supabase credentials:
+```
+EXPO_PUBLIC_SUPABASE_URL=your_supabase_project_url
+EXPO_PUBLIC_SUPABASE_KEY=your_supabase_anon_key
+```
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+4. Set up your Supabase database:
+   - Create a new Supabase project
+   - Run the SQL from `supabase/schema.sql` in your Supabase SQL editor
+   - This will create all necessary tables, RLS policies, triggers, and initial data
+   - Optionally, run `supabase/seed.sql` to add sample dogs for testing
 
-## Join the community
+### Running the App
 
-Join our community of developers creating universal apps.
+```bash
+# Start the development server
+npm start
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+# Run on iOS
+npm run ios
+
+# Run on Android
+npm run android
+
+# Run on web
+npm run web
+```
+
+## 📱 Features
+
+- **Authentication**: Email/password login with Supabase Auth
+- **Dog Management**: Track status, health, and location of dogs
+- **Role-based Access**: Admin, volunteer, vet, and viewer roles
+- **Location-based**: Multi-location support (Koh Phangan, etc.)
+- **Timeline Events**: Track vet visits, adoptions, transfers, and notes
+- **Privacy Levels**: Public, private, and sensitive information handling
+
+## 🏗️ Tech Stack
+
+- **Frontend**: Expo React Native + TypeScript
+- **Backend**: Supabase (PostgreSQL + Auth + Storage)
+- **Navigation**: Expo Router
+- **Styling**: React Native StyleSheet
+
+## 📁 Project Structure
+
+```
+├── app/                    # App screens and layouts
+│   ├── (auth)/            # Authentication screens
+│   ├── (tabs)/            # Main app tabs
+│   └── _layout.tsx        # Root layout
+├── components/            # Reusable components
+├── contexts/              # React contexts
+├── lib/                   # Utilities and configurations
+├── supabase/              # Database schema and migrations
+└── assets/                # Images and fonts
+```
+
+## 🗄️ Database Schema
+
+- **locations**: Regional locations (Koh Phangan, etc.)
+- **users**: User profiles with roles and location assignment
+- **dogs**: Dog profiles with status, health, and metadata
+- **events**: Timeline events for each dog
+
+## 🔐 User Roles
+
+- **Admin**: Full access to all data and user management
+- **Volunteer**: Access to dogs they're assigned to
+- **Vet**: Access to dog medical information only
+- **Viewer**: Read-only access to public information
+
+## 🚧 Development Status
+
+✅ Project setup and configuration
+✅ Authentication system
+✅ Database schema and RLS policies
+✅ Dog listing and profile screens
+✅ User profile management
+🚧 Dog CRUD operations
+🚧 Timeline/events system
+🚧 Location selection
+🚧 Photo upload functionality
+
+## 📝 License
+
+This project is licensed under the MIT License.
