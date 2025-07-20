@@ -1,11 +1,9 @@
 import React, { useState } from 'react';
 import {
   View,
-  Text,
   Modal,
   StyleSheet,
   TextInput,
-  TouchableOpacity,
   Alert,
   SafeAreaView,
   ScrollView,
@@ -15,6 +13,10 @@ import {
 import { Picker } from '@react-native-picker/picker';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
+import { Typography } from './design-system/Typography';
+import { Button } from './design-system/Button';
+import { Card } from './design-system/Card';
+import { Colors, Spacing, BorderRadius, Shadows } from '../constants/DesignTokens';
 
 type TimelineEventModalProps = {
   visible: boolean;
@@ -116,22 +118,28 @@ export default function TimelineEventModal({
           style={styles.keyboardAvoid}
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         >
-          {/* Header */}
-          <View style={styles.header}>
-            <TouchableOpacity onPress={handleClose} style={styles.cancelButton}>
-              <Text style={styles.cancelButtonText}>Cancel</Text>
-            </TouchableOpacity>
-            <Text style={styles.title}>Add Event</Text>
-            <TouchableOpacity 
-              onPress={handleSubmit} 
-              style={[styles.saveButton, loading && styles.saveButtonDisabled]}
+          {/* Header with glassmorphism */}
+          <Card variant="glass" style={styles.header}>
+            <Button
+              title="Cancel"
+              variant="ghost"
+              size="small"
+              onPress={handleClose}
+            />
+            
+            <Typography variant="h1" color="primary">
+              Add Event
+            </Typography>
+            
+            <Button
+              title={loading ? 'Saving...' : 'Save'}
+              variant="primary"
+              size="small"
+              loading={loading}
               disabled={loading}
-            >
-              <Text style={styles.saveButtonText}>
-                {loading ? 'Saving...' : 'Save'}
-              </Text>
-            </TouchableOpacity>
-          </View>
+              onPress={handleSubmit}
+            />
+          </Card>
 
           <ScrollView 
             style={styles.content}
@@ -140,8 +148,10 @@ export default function TimelineEventModal({
           >
             {/* Event Type */}
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Event Type</Text>
-              <View style={styles.pickerContainer}>
+              <Typography variant="h2" color="primary" style={styles.sectionTitle}>
+                Event Type
+              </Typography>
+              <Card variant="neumorphic" style={styles.pickerCard}>
                 <Picker
                   selectedValue={eventType}
                   onValueChange={setEventType}
@@ -155,50 +165,66 @@ export default function TimelineEventModal({
                     />
                   ))}
                 </Picker>
-              </View>
+              </Card>
               {selectedEventType && (
-                <Text style={styles.typeDescription}>
+                <Typography variant="body-small" color="muted" style={styles.description}>
                   {selectedEventType.description}
-                </Text>
+                </Typography>
               )}
             </View>
 
             {/* Title */}
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Title</Text>
-              <TextInput
-                style={styles.textInput}
-                value={title}
-                onChangeText={setTitle}
-                placeholder="Enter event title..."
-                maxLength={100}
-                autoCapitalize="sentences"
-                returnKeyType="next"
-              />
-              <Text style={styles.characterCount}>{title.length}/100</Text>
+              <Typography variant="h2" color="primary" style={styles.sectionTitle}>
+                Title
+              </Typography>
+              <Card variant="neumorphic" style={styles.inputCard}>
+                <TextInput
+                  style={styles.textInput}
+                  value={title}
+                  onChangeText={setTitle}
+                  placeholder="Enter event title..."
+                  placeholderTextColor={Colors.neutral[400]}
+                  maxLength={100}
+                  autoCapitalize="sentences"
+                  returnKeyType="next"
+                />
+              </Card>
+              <Typography variant="caption" color="muted" align="right" style={styles.characterCount}>
+                {title.length}/100
+              </Typography>
             </View>
 
             {/* Description */}
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Description (Optional)</Text>
-              <TextInput
-                style={[styles.textInput, styles.textArea]}
-                value={description}
-                onChangeText={setDescription}
-                placeholder="Add more details about this event..."
-                multiline
-                numberOfLines={4}
-                maxLength={500}
-                autoCapitalize="sentences"
-                textAlignVertical="top"
-              />
-              <Text style={styles.characterCount}>{description.length}/500</Text>
+              <Typography variant="h2" color="primary" style={styles.sectionTitle}>
+                Description (Optional)
+              </Typography>
+              <Card variant="neumorphic" style={styles.inputCard}>
+                <TextInput
+                  style={[styles.textInput, styles.textArea]}
+                  value={description}
+                  onChangeText={setDescription}
+                  placeholder="Add more details about this event..."
+                  placeholderTextColor={Colors.neutral[400]}
+                  multiline
+                  numberOfLines={4}
+                  maxLength={500}
+                  autoCapitalize="sentences"
+                  textAlignVertical="top"
+                />
+              </Card>
+              <Typography variant="caption" color="muted" align="right" style={styles.characterCount}>
+                {description.length}/500
+              </Typography>
             </View>
 
             {/* Privacy Level */}
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Privacy Level</Text>
-              <View style={styles.pickerContainer}>
+              <Typography variant="h2" color="primary" style={styles.sectionTitle}>
+                Privacy Level
+              </Typography>
+              <Card variant="neumorphic" style={styles.pickerCard}>
                 <Picker
                   selectedValue={privacyLevel}
                   onValueChange={setPrivacyLevel}
@@ -212,11 +238,11 @@ export default function TimelineEventModal({
                     />
                   ))}
                 </Picker>
-              </View>
+              </Card>
               {selectedPrivacyLevel && (
-                <Text style={styles.privacyDescription}>
+                <Typography variant="body-small" color="muted" style={styles.description}>
                   {selectedPrivacyLevel.description}
-                </Text>
+                </Typography>
               )}
             </View>
           </ScrollView>
@@ -229,101 +255,72 @@ export default function TimelineEventModal({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8fafc',
+    backgroundColor: Colors.neutral[50],
   },
+  
   keyboardAvoid: {
     flex: 1,
   },
+  
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e2e8f0',
+    marginHorizontal: Spacing.gutter,
+    marginTop: Spacing.md,
+    marginBottom: Spacing.lg,
+    borderRadius: BorderRadius.xl,
   },
-  title: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#1e293b',
-  },
-  cancelButton: {
-    padding: 4,
-  },
-  cancelButtonText: {
-    fontSize: 16,
-    color: '#64748b',
-    fontWeight: '500',
-  },
-  saveButton: {
-    backgroundColor: '#3b82f6',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 8,
-  },
-  saveButtonDisabled: {
-    backgroundColor: '#94a3b8',
-  },
-  saveButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
+  
   content: {
     flex: 1,
-    padding: 20,
+    paddingHorizontal: Spacing.gutter,
   },
+  
   scrollContent: {
-    paddingBottom: 40,
+    paddingBottom: Spacing.xxxl,
   },
+  
   section: {
-    marginBottom: 24,
+    marginBottom: Spacing.sectionGap,
   },
+  
   sectionTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1e293b',
-    marginBottom: 8,
+    marginBottom: Spacing.md,
   },
-  pickerContainer: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#e2e8f0',
-    marginBottom: 8,
+  
+  pickerCard: {
+    marginBottom: Spacing.sm,
+    borderRadius: BorderRadius.lg,
   },
+  
   picker: {
-    marginHorizontal: 8,
+    marginHorizontal: Spacing.sm,
   },
-  typeDescription: {
-    fontSize: 14,
-    color: '#64748b',
-    fontStyle: 'italic',
+  
+  inputCard: {
+    marginBottom: Spacing.sm,
+    borderRadius: BorderRadius.lg,
   },
-  privacyDescription: {
-    fontSize: 14,
-    color: '#64748b',
-    fontStyle: 'italic',
-  },
+  
   textInput: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#e2e8f0',
-    padding: 16,
     fontSize: 16,
-    color: '#1e293b',
-    marginBottom: 4,
+    color: Colors.neutral[800],
+    padding: 0, // Card provides the padding
+    minHeight: 24,
   },
+  
   textArea: {
-    height: 100,
-    paddingTop: 16,
+    minHeight: 100,
+    textAlignVertical: 'top',
   },
+  
+  description: {
+    marginTop: Spacing.sm,
+    fontStyle: 'italic',
+  },
+  
   characterCount: {
-    fontSize: 12,
-    color: '#94a3b8',
-    textAlign: 'right',
+    marginTop: Spacing.xs,
   },
 });
