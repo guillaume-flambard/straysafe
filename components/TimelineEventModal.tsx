@@ -1,11 +1,9 @@
 import React, { useState } from 'react';
 import {
   View,
-  Modal,
   StyleSheet,
   TextInput,
   Alert,
-  SafeAreaView,
   ScrollView,
   KeyboardAvoidingView,
   Platform,
@@ -14,9 +12,11 @@ import { Picker } from '@react-native-picker/picker';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { Typography } from './design-system/Typography';
-import { Button } from './design-system/Button';
-import { Card } from './design-system/Card';
-import { Colors, Spacing, BorderRadius, Shadows } from '../constants/DesignTokens';
+import { AnimatedButton } from './design-system/AnimatedButton';
+import { AnimatedCard } from './design-system/AnimatedCard';
+import { SlideInModal } from './design-system/SlideInModal';
+import { FadeInView } from './design-system/FadeInView';
+import { Colors, Spacing, BorderRadius } from '../constants/DesignTokens';
 
 type TimelineEventModalProps = {
   visible: boolean;
@@ -107,23 +107,25 @@ export default function TimelineEventModal({
   const selectedPrivacyLevel = privacyLevels.find(level => level.value === privacyLevel);
 
   return (
-    <Modal
+    <SlideInModal
       visible={visible}
+      onClose={handleClose}
       animationType="slide"
-      presentationStyle="pageSheet"
-      onRequestClose={handleClose}
+      position="bottom"
+      maxHeight="90%"
     >
-      <SafeAreaView style={styles.container}>
-        <KeyboardAvoidingView 
-          style={styles.keyboardAvoid}
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        >
-          {/* Header with glassmorphism */}
-          <Card variant="glass" style={styles.header}>
-            <Button
+      <KeyboardAvoidingView 
+        style={styles.keyboardAvoid}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
+        {/* Header with glassmorphism and animation */}
+        <FadeInView duration={300}>
+          <AnimatedCard variant="glass" style={styles.header}>
+            <AnimatedButton
               title="Cancel"
               variant="ghost"
               size="small"
+              hapticFeedback={true}
               onPress={handleClose}
             />
             
@@ -131,124 +133,134 @@ export default function TimelineEventModal({
               Add Event
             </Typography>
             
-            <Button
+            <AnimatedButton
               title={loading ? 'Saving...' : 'Save'}
               variant="primary"
               size="small"
               loading={loading}
               disabled={loading}
+              hapticFeedback={true}
+              bounceEffect={true}
               onPress={handleSubmit}
             />
-          </Card>
+          </AnimatedCard>
+        </FadeInView>
 
           <ScrollView 
             style={styles.content}
             contentContainerStyle={styles.scrollContent}
             showsVerticalScrollIndicator={false}
           >
-            {/* Event Type */}
-            <View style={styles.section}>
-              <Typography variant="h2" color="primary" style={styles.sectionTitle}>
-                Event Type
-              </Typography>
-              <Card variant="neumorphic" style={styles.pickerCard}>
-                <Picker
-                  selectedValue={eventType}
-                  onValueChange={setEventType}
-                  style={styles.picker}
-                >
-                  {eventTypes.map((type) => (
-                    <Picker.Item
-                      key={type.value}
-                      label={type.label}
-                      value={type.value}
-                    />
-                  ))}
-                </Picker>
-              </Card>
-              {selectedEventType && (
-                <Typography variant="body-small" color="muted" style={styles.description}>
-                  {selectedEventType.description}
+            {/* Event Type with staggered animation */}
+            <FadeInView delay={100} slideFromBottom>
+              <View style={styles.section}>
+                <Typography variant="h2" color="primary" style={styles.sectionTitle}>
+                  Event Type
                 </Typography>
-              )}
-            </View>
+                <AnimatedCard variant="neumorphic" style={styles.pickerCard}>
+                  <Picker
+                    selectedValue={eventType}
+                    onValueChange={setEventType}
+                    style={styles.picker}
+                  >
+                    {eventTypes.map((type) => (
+                      <Picker.Item
+                        key={type.value}
+                        label={type.label}
+                        value={type.value}
+                      />
+                    ))}
+                  </Picker>
+                </AnimatedCard>
+                {selectedEventType && (
+                  <Typography variant="body-small" color="muted" style={styles.description}>
+                    {selectedEventType.description}
+                  </Typography>
+                )}
+              </View>
+            </FadeInView>
 
-            {/* Title */}
-            <View style={styles.section}>
-              <Typography variant="h2" color="primary" style={styles.sectionTitle}>
-                Title
-              </Typography>
-              <Card variant="neumorphic" style={styles.inputCard}>
-                <TextInput
-                  style={styles.textInput}
-                  value={title}
-                  onChangeText={setTitle}
-                  placeholder="Enter event title..."
-                  placeholderTextColor={Colors.neutral[400]}
-                  maxLength={100}
-                  autoCapitalize="sentences"
-                  returnKeyType="next"
-                />
-              </Card>
-              <Typography variant="caption" color="muted" align="right" style={styles.characterCount}>
-                {title.length}/100
-              </Typography>
-            </View>
-
-            {/* Description */}
-            <View style={styles.section}>
-              <Typography variant="h2" color="primary" style={styles.sectionTitle}>
-                Description (Optional)
-              </Typography>
-              <Card variant="neumorphic" style={styles.inputCard}>
-                <TextInput
-                  style={[styles.textInput, styles.textArea]}
-                  value={description}
-                  onChangeText={setDescription}
-                  placeholder="Add more details about this event..."
-                  placeholderTextColor={Colors.neutral[400]}
-                  multiline
-                  numberOfLines={4}
-                  maxLength={500}
-                  autoCapitalize="sentences"
-                  textAlignVertical="top"
-                />
-              </Card>
-              <Typography variant="caption" color="muted" align="right" style={styles.characterCount}>
-                {description.length}/500
-              </Typography>
-            </View>
-
-            {/* Privacy Level */}
-            <View style={styles.section}>
-              <Typography variant="h2" color="primary" style={styles.sectionTitle}>
-                Privacy Level
-              </Typography>
-              <Card variant="neumorphic" style={styles.pickerCard}>
-                <Picker
-                  selectedValue={privacyLevel}
-                  onValueChange={setPrivacyLevel}
-                  style={styles.picker}
-                >
-                  {privacyLevels.map((level) => (
-                    <Picker.Item
-                      key={level.value}
-                      label={level.label}
-                      value={level.value}
-                    />
-                  ))}
-                </Picker>
-              </Card>
-              {selectedPrivacyLevel && (
-                <Typography variant="body-small" color="muted" style={styles.description}>
-                  {selectedPrivacyLevel.description}
+            {/* Title with animation */}
+            <FadeInView delay={200} slideFromBottom>
+              <View style={styles.section}>
+                <Typography variant="h2" color="primary" style={styles.sectionTitle}>
+                  Title
                 </Typography>
-              )}
-            </View>
+                <AnimatedCard variant="neumorphic" style={styles.inputCard}>
+                  <TextInput
+                    style={styles.textInput}
+                    value={title}
+                    onChangeText={setTitle}
+                    placeholder="Enter event title..."
+                    placeholderTextColor={Colors.neutral[400]}
+                    maxLength={100}
+                    autoCapitalize="sentences"
+                    returnKeyType="next"
+                  />
+                </AnimatedCard>
+                <Typography variant="caption" color="muted" align="right" style={styles.characterCount}>
+                  {title.length}/100
+                </Typography>
+              </View>
+            </FadeInView>
+
+            {/* Description with animation */}
+            <FadeInView delay={300} slideFromBottom>
+              <View style={styles.section}>
+                <Typography variant="h2" color="primary" style={styles.sectionTitle}>
+                  Description (Optional)
+                </Typography>
+                <AnimatedCard variant="neumorphic" style={styles.inputCard}>
+                  <TextInput
+                    style={[styles.textInput, styles.textArea]}
+                    value={description}
+                    onChangeText={setDescription}
+                    placeholder="Add more details about this event..."
+                    placeholderTextColor={Colors.neutral[400]}
+                    multiline
+                    numberOfLines={4}
+                    maxLength={500}
+                    autoCapitalize="sentences"
+                    textAlignVertical="top"
+                  />
+                </AnimatedCard>
+                <Typography variant="caption" color="muted" align="right" style={styles.characterCount}>
+                  {description.length}/500
+                </Typography>
+              </View>
+            </FadeInView>
+
+            {/* Privacy Level with animation */}
+            <FadeInView delay={400} slideFromBottom>
+              <View style={styles.section}>
+                <Typography variant="h2" color="primary" style={styles.sectionTitle}>
+                  Privacy Level
+                </Typography>
+                <AnimatedCard variant="neumorphic" style={styles.pickerCard}>
+                  <Picker
+                    selectedValue={privacyLevel}
+                    onValueChange={setPrivacyLevel}
+                    style={styles.picker}
+                  >
+                    {privacyLevels.map((level) => (
+                      <Picker.Item
+                        key={level.value}
+                        label={level.label}
+                        value={level.value}
+                      />
+                    ))}
+                  </Picker>
+                </AnimatedCard>
+                {selectedPrivacyLevel && (
+                  <Typography variant="body-small" color="muted" style={styles.description}>
+                    {selectedPrivacyLevel.description}
+                  </Typography>
+                )}
+              </View>
+            </FadeInView>
           </ScrollView>
         </KeyboardAvoidingView>
-      </SafeAreaView>
-    </Modal>
+    </SlideInModal>
   );
 }
 

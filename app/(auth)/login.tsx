@@ -1,14 +1,98 @@
-import React, { useState } from 'react'
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native'
+import React, { useState, useEffect } from 'react'
+import { Alert, Image } from 'react-native'
+import {
+  YStack,
+  XStack,
+  Text,
+  Button,
+  Input,
+  Card,
+  H1,
+  H2,
+  Spinner,
+  useTheme
+} from 'tamagui'
 import { useAuth } from '../../contexts/AuthContext'
 import { supabase } from '../../lib/supabase'
 import { router } from 'expo-router'
+import { LogIn, Fingerprint } from 'lucide-react-native'
+import * as LocalAuthentication from 'expo-local-authentication'
+import * as SecureStore from 'expo-secure-store'
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
+  const [biometricLoading, setBiometricLoading] = useState(false)
+  const [biometricAvailable, setBiometricAvailable] = useState(false)
+  const [hasStoredCredentials, setHasStoredCredentials] = useState(false)
   const { signIn } = useAuth()
+  const theme = useTheme()
+
+  useEffect(() => {
+    checkBiometricAvailability()
+    checkStoredCredentials()
+  }, [])
+
+  const checkBiometricAvailability = async () => {
+    try {
+      const compatible = await LocalAuthentication.hasHardwareAsync()
+      const enrolled = await LocalAuthentication.isEnrolledAsync()
+      setBiometricAvailable(compatible && enrolled)
+    } catch (error) {
+      console.error('Error checking biometric availability:', error)
+    }
+  }
+
+  const checkStoredCredentials = async () => {
+    try {
+      const storedEmail = await SecureStore.getItemAsync('stored_email')
+      const storedPassword = await SecureStore.getItemAsync('stored_password')
+      setHasStoredCredentials(!!(storedEmail && storedPassword))
+      
+      if (storedEmail) {
+        setEmail(storedEmail)
+      }
+    } catch (error) {
+      console.error('Error checking stored credentials:', error)
+    }
+  }
+
+  const authenticateWithBiometrics = async () => {
+    try {
+      setBiometricLoading(true)
+      
+      const result = await LocalAuthentication.authenticateAsync({
+        promptMessage: 'Sign in to StraySafe',
+        subtitle: 'Use your fingerprint or Face ID',
+        cancelLabel: 'Cancel',
+        disableDeviceFallback: false,
+      })
+
+      if (result.success) {
+        // Retrieve stored credentials
+        const storedEmail = await SecureStore.getItemAsync('stored_email')
+        const storedPassword = await SecureStore.getItemAsync('stored_password')
+        
+        if (storedEmail && storedPassword) {
+          const { error } = await signIn(storedEmail, storedPassword)
+          
+          if (error) {
+            Alert.alert('Error', 'Automatic login failed')
+          } else {
+            router.replace('/(tabs)')
+          }
+        } else {
+          Alert.alert('Error', 'No saved login credentials found')
+        }
+      }
+    } catch (error) {
+      console.error('Biometric authentication error:', error)
+      Alert.alert('Error', 'Biometric authentication failed')
+    } finally {
+      setBiometricLoading(false)
+    }
+  }
 
   const resendConfirmation = async () => {
     if (!email) {
@@ -51,105 +135,194 @@ export default function LoginScreen() {
         Alert.alert('Error', error.message)
       }
     } else {
+      // Successful login - save credentials for biometric authentication
+      try {
+        await SecureStore.setItemAsync('stored_email', email)
+        await SecureStore.setItemAsync('stored_password', password)
+        setHasStoredCredentials(true)
+      } catch (storeError) {
+        console.error('Error storing credentials:', storeError)
+      }
+      
       router.replace('/(tabs)')
     }
     setLoading(false)
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>StraySafe</Text>
-      <Text style={styles.subtitle}>Sign in to continue</Text>
+    <YStack 
+      flex={1} 
+      backgroundColor="$background" 
+      justifyContent="center" 
+      paddingHorizontal="$6"
+      paddingVertical="$8"
+    >
+      {/* Glassmorphism Header */}
+      <Card
+        elevate
+        size="$4"
+        bordered
+        backgroundColor="$backgroundStrong"
+        borderColor="$borderColor"
+        padding="$8"
+        marginBottom="$8"
+        alignItems="center"
+        shadowColor="$shadowColor"
+        shadowOffset={{ width: 0, height: 8 }}
+        shadowOpacity={0.2}
+        shadowRadius={16}
+        elevation={12}
+        borderRadius="$glass"
+      >
+        <Image 
+          source={require('../../assets/images/straysafe_logo.png')} 
+          style={{ width: 80, height: 80, marginBottom: 8 }}
+          resizeMode="contain"
+        />
+        <H1 fontSize="$10" fontWeight="bold" color="$blue10" marginTop="$4" textAlign="center">
+          StraySafe
+        </H1>
+        <H2 fontSize="$5" color="$color11" marginTop="$2" textAlign="center">
+          Sign in to continue
+        </H2>
+      </Card>
       
-      <View style={styles.form}>
-        <TextInput
-          style={styles.input}
-          placeholder="Email"
-          value={email}
-          onChangeText={setEmail}
-          keyboardType="email-address"
-          autoCapitalize="none"
-        />
-        
-        <TextInput
-          style={styles.input}
-          placeholder="Password"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-        />
-        
-        <TouchableOpacity 
-          style={styles.button} 
-          onPress={handleSignIn}
-          disabled={loading}
-        >
-          <Text style={styles.buttonText}>
-            {loading ? 'Signing in...' : 'Sign In'}
-          </Text>
-        </TouchableOpacity>
-        
-        <TouchableOpacity 
-          style={styles.linkButton}
-          onPress={() => router.push('/(auth)/signup')}
-        >
-          <Text style={styles.linkText}>
-            Don&apos;t have an account? Sign up
-          </Text>
-        </TouchableOpacity>
-      </View>
-    </View>
+      <Card
+        elevate
+        size="$4"
+        bordered
+        backgroundColor="$backgroundSoft"
+        borderColor="$borderColor"
+        padding="$6"
+        borderRadius="$card"
+        shadowColor="$shadowColor"
+        shadowOffset={{ width: 0, height: 4 }}
+        shadowOpacity={0.15}
+        shadowRadius={12}
+        elevation={8}
+      >
+        <YStack gap="$4">
+          <Input
+            size="$5"
+            placeholder="Email"
+            value={email}
+            onChangeText={setEmail}
+            keyboardType="email-address"
+            autoCapitalize="none"
+            backgroundColor="$backgroundHover"
+            borderColor="$borderColor"
+            borderRadius="$button"
+            fontSize="$4"
+            paddingHorizontal="$4"
+            paddingVertical="$4"
+            focusStyle={{
+              borderColor: '$blue10',
+              backgroundColor: '$backgroundFocus'
+            }}
+          />
+          
+          <Input
+            size="$5"
+            placeholder="Password"
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
+            backgroundColor="$backgroundHover"
+            borderColor="$borderColor"
+            borderRadius="$button"
+            fontSize="$4"
+            paddingHorizontal="$4"
+            paddingVertical="$4"
+            focusStyle={{
+              borderColor: '$blue10',
+              backgroundColor: '$backgroundFocus'
+            }}
+          />
+          
+          {/* Biometric Authentication Button */}
+          {biometricAvailable && hasStoredCredentials && (
+            <Button
+              size="$5"
+              backgroundColor="$green9"
+              borderColor="$green9"
+              color="white"
+              borderRadius="$button"
+              onPress={authenticateWithBiometrics}
+              disabled={biometricLoading}
+              hoverStyle={{ backgroundColor: '$green10' }}
+              pressStyle={{ backgroundColor: '$green8' }}
+              shadowColor="$green9"
+              shadowOffset={{ width: 0, height: 4 }}
+              shadowOpacity={0.3}
+              shadowRadius={8}
+              elevation={6}
+              icon={biometricLoading ? undefined : Fingerprint}
+            >
+              {biometricLoading ? (
+                <XStack alignItems="center" gap="$2">
+                  <Spinner size="small" color="white" />
+                  <Text fontSize="$4" fontWeight="600" color="white">
+                    Authenticating...
+                  </Text>
+                </XStack>
+              ) : (
+                <Text fontSize="$4" fontWeight="600" color="white">
+                  🔐 Quick Sign In
+                </Text>
+              )}
+            </Button>
+          )}
+          
+          <Button
+            size="$5"
+            backgroundColor="$blue10"
+            borderColor="$blue10"
+            color="white"
+            borderRadius="$button"
+            onPress={handleSignIn}
+            disabled={loading}
+            hoverStyle={{ backgroundColor: '$blue11' }}
+            pressStyle={{ backgroundColor: '$blue9' }}
+            shadowColor="$blue10"
+            shadowOffset={{ width: 0, height: 4 }}
+            shadowOpacity={0.3}
+            shadowRadius={8}
+            elevation={6}
+            icon={loading ? undefined : LogIn}
+            marginTop="$2"
+          >
+            {loading ? (
+              <XStack alignItems="center" gap="$2">
+                <Spinner size="small" color="white" />
+                <Text fontSize="$4" fontWeight="600" color="white">
+                  Signing in...
+                </Text>
+              </XStack>
+            ) : (
+              <Text fontSize="$4" fontWeight="600" color="white">
+                Sign In
+              </Text>
+            )}
+          </Button>
+          
+          <Button
+            size="$4"
+            variant="outlined"
+            backgroundColor="transparent"
+            borderColor="transparent"
+            color="$blue10"
+            onPress={() => router.push('/(auth)/signup')}
+            hoverStyle={{ backgroundColor: '$blue3' }}
+            pressStyle={{ backgroundColor: '$blue4' }}
+            marginTop="$2"
+          >
+            <Text fontSize="$3" color="$blue10">
+              Don't have an account? Sign up
+            </Text>
+          </Button>
+        </YStack>
+      </Card>
+    </YStack>
   )
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    justifyContent: 'center',
-    paddingHorizontal: 24,
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    marginBottom: 8,
-    color: '#2563eb',
-  },
-  subtitle: {
-    fontSize: 16,
-    textAlign: 'center',
-    marginBottom: 32,
-    color: '#6b7280',
-  },
-  form: {
-    gap: 16,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#d1d5db',
-    borderRadius: 8,
-    padding: 16,
-    fontSize: 16,
-    backgroundColor: '#f9fafb',
-  },
-  button: {
-    backgroundColor: '#2563eb',
-    borderRadius: 8,
-    padding: 16,
-    alignItems: 'center',
-  },
-  buttonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  linkButton: {
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  linkText: {
-    color: '#2563eb',
-    fontSize: 14,
-  },
-})

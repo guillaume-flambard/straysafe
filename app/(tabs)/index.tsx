@@ -1,14 +1,22 @@
 import React, { useState, useEffect } from 'react';
-import { View, ScrollView, TouchableOpacity, StyleSheet, SafeAreaView, ActivityIndicator } from 'react-native';
+import { Alert } from 'react-native';
 import { router } from 'expo-router';
+import { 
+  YStack, 
+  XStack, 
+  Text, 
+  useTheme,
+  View,
+  Card,
+  Button,
+  ScrollView,
+  Spinner,
+  Avatar
+} from 'tamagui';
+import { Plus } from 'lucide-react-native';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
 import { Database } from '../../lib/database.types';
-import { Typography } from '../../components/design-system/Typography';
-import { Button } from '../../components/design-system/Button';
-import { Card } from '../../components/design-system/Card';
-import { BentoGrid, BentoItem } from '../../components/design-system/BentoGrid';
-import { Colors, Spacing, BorderRadius, Shadows } from '../../constants/DesignTokens';
 
 type Dog = Database['public']['Tables']['dogs']['Row'];
 
@@ -16,6 +24,7 @@ export default function DogsScreen() {
   const [dogs, setDogs] = useState<Dog[]>([]);
   const [loading, setLoading] = useState(true);
   const { userProfile } = useAuth();
+  const theme = useTheme();
 
   useEffect(() => {
     if (userProfile) {
@@ -36,6 +45,7 @@ export default function DogsScreen() {
     if (error) {
       console.error('Error fetching dogs:', error);
     } else {
+      console.log('Fetched dogs:', data?.length || 0, 'dogs');
       setDogs(data || []);
     }
     setLoading(false);
@@ -54,257 +64,144 @@ export default function DogsScreen() {
     }
   };
 
-  const renderDogCard = (item: Dog, index: number) => {
-    // Create dynamic layout pattern for bento grid
-    const isWide = index % 5 === 0; // Every 5th item is wide
-    const span = isWide ? 2 : 1;
-    const aspectRatio = isWide ? 1.2 : 1;
-
-    return (
-      <BentoItem 
-        key={item.id} 
-        span={span} 
-        aspectRatio={aspectRatio}
-      >
-        <TouchableOpacity 
-          style={styles.dogCard} 
-          activeOpacity={0.8}
-          onPress={() => router.push(`/dog/${item.id}`)}
+  const renderDogCard = (item: Dog) => (
+    <Card
+      key={item.id}
+      elevate
+      size="$4"
+      bordered
+      animation="bouncy"
+      scale={0.9}
+      hoverStyle={{ scale: 0.925 }}
+      pressStyle={{ scale: 0.875 }}
+      onPress={() => router.push(`/dog/${item.id}` as any)}
+      backgroundColor="$backgroundSoft"
+      borderColor="$borderColor"
+      marginBottom="$3"
+      padding="$4"
+    >
+      <XStack alignItems="center" gap="$3">
+        <Avatar circular size="$6" backgroundColor="$blue4">
+          <Text fontFamily="$body" fontSize="$6" color="$blue10">
+            {item.name.charAt(0)}
+          </Text>
+        </Avatar>
+        
+        <YStack flex={1} gap="$1">
+          <Text fontSize="$5" fontWeight="600" color="$color12" numberOfLines={1}>
+            {item.name}
+          </Text>
+          <Text fontSize="$3" color="$color11">
+            {item.gender === 'male' ? '♂️' : '♀️'} {item.gender}
+            {item.birth_date && ` • ${new Date().getFullYear() - new Date(item.birth_date).getFullYear()}y`}
+          </Text>
+        </YStack>
+        
+        <View
+          backgroundColor={getStatusColor(item.status)}
+          paddingHorizontal="$2"
+          paddingVertical="$1"
+          borderRadius="$2"
         >
-          <Card variant="neumorphic" padding="lg" style={styles.cardContainer}>
-            {/* Dog Avatar */}
-            <View style={styles.dogImagePlaceholder}>
-              <Typography variant="display-small" color="brand">
-                {item.name.charAt(0)}
-              </Typography>
-            </View>
-            
-            {/* Dog Info */}
-            <View style={styles.dogContent}>
-              <View style={styles.dogHeader}>
-                <Typography 
-                  variant={isWide ? "h2" : "h3"} 
-                  color="primary" 
-                  numberOfLines={1}
-                  style={styles.dogName}
-                >
-                  {item.name}
-                </Typography>
-                
-                <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) }]}>
-                  <Typography variant="caption" color="white">
-                    {item.status}
-                  </Typography>
-                </View>
-              </View>
-              
-              <View style={styles.dogMeta}>
-                <Typography variant="body-small" color="secondary" numberOfLines={1}>
-                  {item.gender === 'male' ? '♂️' : '♀️'} {item.gender}
-                  {item.birth_date && ` • ${new Date().getFullYear() - new Date(item.birth_date).getFullYear()}y`}
-                </Typography>
-                
-                {item.sterilized && (
-                  <Typography variant="body-small" color="secondary">
-                    ✅ Sterilized
-                  </Typography>
-                )}
-              </View>
-              
-              {item.location_text && isWide && (
-                <Typography variant="body-small" color="muted" numberOfLines={1}>
-                  📍 {item.location_text}
-                </Typography>
-              )}
-              
-              {/* Tags - only show on wide cards */}
-              {item.tags.length > 0 && isWide && (
-                <View style={styles.tagsContainer}>
-                  {item.tags.slice(0, 2).map((tag, tagIndex) => (
-                    <View key={tagIndex} style={styles.tag}>
-                      <Typography variant="caption" color="secondary">
-                        {tag}
-                      </Typography>
-                    </View>
-                  ))}
-                  {item.tags.length > 2 && (
-                    <Typography variant="caption" color="muted">
-                      +{item.tags.length - 2}
-                    </Typography>
-                  )}
-                </View>
-              )}
-            </View>
-          </Card>
-        </TouchableOpacity>
-      </BentoItem>
-    );
-  };
+          <Text fontSize="$2" color="white" fontWeight="600">
+            {item.status}
+          </Text>
+        </View>
+      </XStack>
+      
+      {item.location_text && (
+        <Text fontSize="$3" color="$color10" marginTop="$2">
+          📍 {item.location_text}
+        </Text>
+      )}
+      
+      {item.sterilized && (
+        <Text fontSize="$3" color="$green10" marginTop="$2">
+          ✅ Sterilized
+        </Text>
+      )}
+    </Card>
+  );
 
   if (loading) {
     return (
-      <View style={styles.centerContainer}>
-        <ActivityIndicator size="large" color="#2563eb" />
-      </View>
+      <YStack flex={1} justifyContent="center" alignItems="center" backgroundColor="$background">
+        <Spinner size="large" color="$blue10" />
+        <Text fontSize="$4" color="$color11" marginTop="$4">
+          Loading dogs...
+        </Text>
+      </YStack>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      {/* Header with exaggerated minimalism */}
-      <View style={styles.header}>
-        <Typography variant="display-medium" color="primary">
+    <YStack flex={1} backgroundColor="$background">
+      {/* Glassmorphism Header */}
+      <XStack
+        justifyContent="space-between"
+        alignItems="center"
+        paddingHorizontal="$6"
+        paddingVertical="$4"
+        paddingTop="$12"
+        backgroundColor="$backgroundStrong"
+        borderBottomLeftRadius="$glass"
+        borderBottomRightRadius="$glass"
+        borderBottomWidth={1}
+        borderBottomColor="$borderColor"
+        shadowColor="$shadowColor"
+        shadowOffset={{ width: 0, height: 4 }}
+        shadowOpacity={0.15}
+        shadowRadius={12}
+        elevation={8}
+      >
+        <Text fontSize="$8" fontWeight="bold" color="$color12">
           Dogs
-        </Typography>
-        <Button 
-          title="+ Add Dog" 
-          variant="primary"
-          size="medium"
-          onPress={() => {/* TODO: Implement add dog */}}
-        />
-      </View>
+        </Text>
+        <Button
+          icon={Plus}
+          size="$4"
+          variant="outlined"
+          backgroundColor="$blue10"
+          borderColor="$blue10"
+          color="white"
+          borderRadius="$button"
+          onPress={() => Alert.alert('Add Dog', 'Feature coming soon!')}
+          hoverStyle={{ backgroundColor: '$blue11' }}
+          pressStyle={{ backgroundColor: '$blue9' }}
+        >
+          Add Dog
+        </Button>
+      </XStack>
       
-      <ScrollView 
-        style={styles.content}
-        contentContainerStyle={styles.scrollContent}
+      <ScrollView
+        flex={1}
         showsVerticalScrollIndicator={false}
-        refreshing={loading}
-        onRefresh={fetchDogs}
+        contentContainerStyle={{ padding: 16, paddingBottom: 120 }}
       >
         {dogs.length > 0 ? (
-          <BentoGrid>
-            {dogs.map((dog, index) => renderDogCard(dog, index))}
-          </BentoGrid>
+          <YStack space="$3">
+            {dogs.map(renderDogCard)}
+          </YStack>
         ) : (
-          <Card variant="glass" style={styles.emptyContainer}>
-            <Typography variant="h1" color="primary" align="center">
+          <Card
+            elevate
+            size="$4"
+            bordered
+            backgroundColor="$backgroundSoft"
+            borderColor="$borderColor"
+            padding="$8"
+            marginTop="$8"
+            alignItems="center"
+          >
+            <Text fontSize="$6" fontWeight="600" color="$color11" textAlign="center">
               No dogs found
-            </Typography>
-            <Typography 
-              variant="body-large" 
-              color="secondary" 
-              align="center"
-              style={styles.emptySubtext}
-            >
+            </Text>
+            <Text fontSize="$4" color="$color10" textAlign="center" marginTop="$2">
               Add your first dog to get started
-            </Typography>
+            </Text>
           </Card>
         )}
       </ScrollView>
-    </SafeAreaView>
+    </YStack>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.neutral[50],
-  },
-  
-  centerContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: Colors.neutral[50],
-  },
-  
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: Spacing.gutter,
-    paddingVertical: Spacing.lg,
-    paddingTop: Spacing.xxxl,
-    backgroundColor: Colors.neutral[0],
-    borderBottomLeftRadius: BorderRadius.xxl,
-    borderBottomRightRadius: BorderRadius.xxl,
-    ...Shadows.soft,
-  },
-  
-  content: {
-    flex: 1,
-    padding: Spacing.gutter,
-  },
-  
-  scrollContent: {
-    paddingBottom: 120, // Extra space for floating tab bar
-  },
-  
-  dogCard: {
-    flex: 1,
-    height: '100%',
-  },
-  
-  cardContainer: {
-    flex: 1,
-    height: '100%',
-  },
-  
-  dogImagePlaceholder: {
-    width: 60,
-    height: 60,
-    backgroundColor: Colors.primary[50],
-    borderRadius: BorderRadius.circle,
-    justifyContent: 'center',
-    alignItems: 'center',
-    alignSelf: 'center',
-    marginBottom: Spacing.md,
-  },
-  
-  dogContent: {
-    flex: 1,
-    justifyContent: 'space-between',
-  },
-  
-  dogHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: Spacing.sm,
-  },
-  
-  dogName: {
-    flex: 1,
-    marginRight: Spacing.sm,
-  },
-  
-  statusBadge: {
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: 4,
-    borderRadius: BorderRadius.pill,
-    minWidth: 60,
-    alignItems: 'center',
-  },
-  
-  dogMeta: {
-    gap: 4,
-    marginBottom: Spacing.sm,
-  },
-  
-  tagsContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 6,
-    alignItems: 'center',
-  },
-  
-  tag: {
-    backgroundColor: Colors.neutral[100],
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: 2,
-    borderRadius: BorderRadius.md,
-    borderWidth: 1,
-    borderColor: Colors.neutral[200],
-  },
-  
-  emptyContainer: {
-    alignItems: 'center',
-    paddingVertical: Spacing.xxxl * 2,
-    paddingHorizontal: Spacing.xl,
-    marginTop: Spacing.xxxl,
-  },
-  
-  emptySubtext: {
-    marginTop: Spacing.md,
-  },
-});

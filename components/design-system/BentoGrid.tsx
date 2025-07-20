@@ -1,11 +1,9 @@
 import React from 'react';
 import { View, StyleSheet, Dimensions } from 'react-native';
-import { Spacing, Layout } from '../../constants/DesignTokens';
+import { Spacing } from '../../constants/DesignTokens';
 
 interface BentoGridProps {
   children: React.ReactNode[];
-  columns?: number;
-  gap?: number;
   style?: any;
 }
 
@@ -20,12 +18,10 @@ const { width: screenWidth } = Dimensions.get('window');
 
 export function BentoGrid({ 
   children, 
-  columns = 2, 
-  gap = Spacing.cardGap,
   style 
 }: BentoGridProps) {
   return (
-    <View style={[styles.grid, { gap }, style]}>
+    <View style={[styles.grid, style]}>
       {children}
     </View>
   );
@@ -37,23 +33,25 @@ export function BentoItem({
   aspectRatio = 1,
   style 
 }: BentoItemProps) {
-  const containerPadding = Layout.container.padding * 2;
-  const totalGap = Spacing.cardGap * (Layout.bentoGrid.columns - 1);
-  const availableWidth = screenWidth - containerPadding - totalGap;
+  const gap = Spacing.cardGap;
+  const containerPadding = Spacing.gutter * 2;
+  const availableWidth = screenWidth - containerPadding;
   
-  const itemWidth = span === 2 
+  // Simplified width calculation
+  const calculatedWidth = span === 2 
     ? availableWidth 
-    : (availableWidth / Layout.bentoGrid.columns);
+    : (availableWidth - gap) / 2;
   
-  const itemHeight = itemWidth / aspectRatio;
+  const itemHeight = calculatedWidth / aspectRatio;
 
   return (
     <View 
       style={[
         styles.item,
+        span === 2 ? styles.fullWidth : styles.halfWidth,
         {
-          width: itemWidth,
           height: itemHeight,
+          marginBottom: gap,
         },
         style
       ]}
@@ -68,9 +66,18 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
+    alignItems: 'flex-start',
   },
   
   item: {
     overflow: 'hidden',
+  },
+  
+  fullWidth: {
+    width: '100%',
+  },
+  
+  halfWidth: {
+    width: '48%', // Slightly less than 50% to account for gap
   },
 });

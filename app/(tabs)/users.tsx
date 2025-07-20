@@ -1,9 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, FlatList, Alert } from 'react-native';
+import { Alert } from 'react-native';
+import {
+  YStack,
+  XStack,
+  Text,
+  Card,
+  Button,
+  ScrollView,
+  Spinner,
+  View,
+  Avatar,
+} from 'tamagui';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
 import { router } from 'expo-router';
 import { Database } from '../../lib/database.types';
+import { UserPlus } from 'lucide-react-native';
 
 type User = Database['public']['Tables']['users']['Row'];
 
@@ -87,36 +99,58 @@ export default function UsersScreen() {
     });
   };
 
-  const renderUser = ({ item }: { item: User }) => (
-    <TouchableOpacity style={styles.userCard} activeOpacity={0.7}>
-      <View style={styles.userAvatar}>
-        <Text style={styles.userInitials}>
-          {getInitials(item.full_name, item.email)}
-        </Text>
-      </View>
-      
-      <View style={styles.userContent}>
-        <View style={styles.userHeader}>
-          <Text style={styles.userName}>
-            {item.full_name || 'Anonymous User'}
+  const renderUser = (item: User) => (
+    <Card
+      key={item.id}
+      elevate
+      size="$4"
+      bordered
+      animation="bouncy"
+      scale={0.9}
+      hoverStyle={{ scale: 0.925 }}
+      pressStyle={{ scale: 0.875 }}
+      backgroundColor="$backgroundSoft"
+      borderColor="$borderColor"
+      marginBottom="$3"
+      padding="$4"
+    >
+      <XStack alignItems="center" gap="$4">
+        <Avatar circular size="$6" backgroundColor="$blue4">
+          <Text fontFamily="$body" fontSize="$5" color="$blue10">
+            {getInitials(item.full_name, item.email)}
           </Text>
-          <View style={styles.roleContainer}>
-            <Text style={styles.roleIcon}>{getRoleIcon(item.role)}</Text>
-            <View style={[styles.roleBadge, { backgroundColor: getRoleColor(item.role) }]}>
-              <Text style={styles.roleText}>{item.role}</Text>
-            </View>
-          </View>
-        </View>
+        </Avatar>
         
-        <Text style={styles.userEmail}>{item.email}</Text>
-        
-        <View style={styles.userMeta}>
-          <Text style={styles.joinDate}>
+        <YStack flex={1} gap="$1">
+          <XStack justifyContent="space-between" alignItems="center">
+            <Text fontSize="$5" fontWeight="bold" color="$color12" numberOfLines={1} flex={1}>
+              {item.full_name || 'Anonymous User'}
+            </Text>
+            <XStack alignItems="center" gap="$2">
+              <Text fontSize="$4">{getRoleIcon(item.role)}</Text>
+              <View
+                backgroundColor={getRoleColor(item.role)}
+                paddingHorizontal="$2"
+                paddingVertical="$1"
+                borderRadius="$3"
+              >
+                <Text fontSize="$1" color="white" fontWeight="700" textTransform="uppercase">
+                  {item.role}
+                </Text>
+              </View>
+            </XStack>
+          </XStack>
+          
+          <Text fontSize="$3" color="$color11">
+            {item.email}
+          </Text>
+          
+          <Text fontSize="$2" color="$color10">
             Joined {formatDate(item.created_at)}
           </Text>
-        </View>
-      </View>
-    </TouchableOpacity>
+        </YStack>
+      </XStack>
+    </Card>
   );
 
   const filterButtons = [
@@ -131,281 +165,153 @@ export default function UsersScreen() {
 
   if (userProfile?.role !== 'admin') {
     return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.accessDeniedContainer}>
-          <Text style={styles.accessDeniedTitle}>🚫 Access Denied</Text>
-          <Text style={styles.accessDeniedText}>
+      <YStack flex={1} backgroundColor="$background">
+        <XStack
+          justifyContent="center"
+          alignItems="center"
+          paddingHorizontal="$6"
+          paddingVertical="$4"
+          paddingTop="$12"
+          backgroundColor="$backgroundStrong"
+          borderBottomLeftRadius="$glass"
+          borderBottomRightRadius="$glass"
+          borderBottomWidth={1}
+          borderBottomColor="$borderColor"
+        >
+          <Text fontSize="$8" fontWeight="bold" color="$color12">
+            Users
+          </Text>
+        </XStack>
+        
+        <YStack flex={1} justifyContent="center" alignItems="center" padding="$8">
+          <Text fontSize="$8" fontWeight="bold" color="$red10" marginBottom="$4" textAlign="center">
+            🚫 Access Denied
+          </Text>
+          <Text fontSize="$4" color="$color11" textAlign="center" marginBottom="$8" lineHeight="$2">
             This section is only available to administrators.
           </Text>
-          <TouchableOpacity 
-            style={styles.backButton}
+          <Button
+            size="$4"
+            backgroundColor="$blue10"
+            borderColor="$blue10"
+            color="white"
+            borderRadius="$button"
             onPress={() => router.replace('/(tabs)')}
+            hoverStyle={{ backgroundColor: '$blue11' }}
+            pressStyle={{ backgroundColor: '$blue9' }}
           >
-            <Text style={styles.backButtonText}>Go Back</Text>
-          </TouchableOpacity>
-        </View>
-      </SafeAreaView>
+            Go Back
+          </Button>
+        </YStack>
+      </YStack>
+    );
+  }
+
+  if (loading) {
+    return (
+      <YStack flex={1} justifyContent="center" alignItems="center" backgroundColor="$background">
+        <Spinner size="large" color="$blue10" />
+        <Text fontSize="$4" color="$color11" marginTop="$4">
+          Loading users...
+        </Text>
+      </YStack>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Users</Text>
-        <TouchableOpacity 
-          style={styles.addButton}
+    <YStack flex={1} backgroundColor="$background">
+      <XStack
+        justifyContent="space-between"
+        alignItems="center"
+        paddingHorizontal="$6"
+        paddingVertical="$4"
+        paddingTop="$12"
+        backgroundColor="$backgroundStrong"
+        borderBottomLeftRadius="$glass"
+        borderBottomRightRadius="$glass"
+        borderBottomWidth={1}
+        borderBottomColor="$borderColor"
+        shadowColor="$shadowColor"
+        shadowOffset={{ width: 0, height: 4 }}
+        shadowOpacity={0.15}
+        shadowRadius={12}
+        elevation={8}
+      >
+        <Text fontSize="$8" fontWeight="bold" color="$color12">
+          Users
+        </Text>
+        <Button
+          icon={UserPlus}
+          size="$4"
+          variant="outlined"
+          backgroundColor="$blue10"
+          borderColor="$blue10"
+          color="white"
+          borderRadius="$button"
           onPress={() => Alert.alert('Invite User', 'This feature will be implemented soon!')}
+          hoverStyle={{ backgroundColor: '$blue11' }}
+          pressStyle={{ backgroundColor: '$blue9' }}
         >
-          <Text style={styles.addButtonText}>+ Invite</Text>
-        </TouchableOpacity>
-      </View>
-      
-      <View style={styles.content}>
-        {/* Filter Buttons */}
-        <View style={styles.filtersContainer}>
-          <FlatList
-            horizontal
-            data={filterButtons}
-            keyExtractor={(item) => item.key}
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.filtersContent}
-            renderItem={({ item }) => (
-              <TouchableOpacity
-                style={[
-                  styles.filterButton,
-                  filter === item.key && styles.filterButtonActive
-                ]}
-                onPress={() => setFilter(item.key as any)}
-              >
-                <Text style={[
-                  styles.filterButtonText,
-                  filter === item.key && styles.filterButtonTextActive
-                ]}>
-                  {item.label} ({item.count})
-                </Text>
-              </TouchableOpacity>
-            )}
-          />
-        </View>
+          + Invite
+        </Button>
+      </XStack>
+      {/* Filter Buttons */}
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} paddingVertical="$4">
+        <XStack gap="$2" paddingHorizontal="$4">
+          {filterButtons.map((item) => (
+            <Button
+              key={item.key}
+              size="$3"
+              variant="outlined"
+              backgroundColor={filter === item.key ? "$blue10" : "$backgroundSoft"}
+              borderColor={filter === item.key ? "$blue10" : "$borderColor"}
+              color={filter === item.key ? "white" : "$color11"}
+              borderRadius="$5"
+              onPress={() => setFilter(item.key as any)}
+              hoverStyle={{ 
+                backgroundColor: filter === item.key ? '$blue11' : '$backgroundHover' 
+              }}
+              pressStyle={{ 
+                backgroundColor: filter === item.key ? '$blue9' : '$backgroundPress' 
+              }}
+            >
+              {item.label} ({item.count})
+            </Button>
+          ))}
+        </XStack>
+      </ScrollView>
 
-        {/* Users List */}
-        <FlatList
-          data={filteredUsers}
-          renderItem={renderUser}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={[styles.listContainer, { paddingBottom: 100 }]}
-          refreshing={loading}
-          onRefresh={fetchUsers}
-          ListEmptyComponent={
-            <View style={styles.emptyContainer}>
-              <Text style={styles.emptyText}>No users found</Text>
-              <Text style={styles.emptySubtext}>
-                {filter === 'all' ? 'No users in this location yet' : `No ${filter}s found`}
-              </Text>
-            </View>
-          }
-        />
-      </View>
-    </SafeAreaView>
+      {/* Users List */}
+      <ScrollView
+        flex={1}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ padding: 16, paddingBottom: 120 }}
+      >
+        {filteredUsers.length > 0 ? (
+          <YStack gap="$3">
+            {filteredUsers.map((user) => renderUser(user))}
+          </YStack>
+        ) : (
+          <Card
+            elevate
+            size="$4"
+            bordered
+            backgroundColor="$backgroundSoft"
+            borderColor="$borderColor"
+            padding="$8"
+            marginTop="$8"
+            alignItems="center"
+          >
+            <Text fontSize="$5" fontWeight="600" color="$color11" textAlign="center">
+              No users found
+            </Text>
+            <Text fontSize="$3" color="$color10" textAlign="center" marginTop="$2">
+              {filter === 'all' ? 'No users in this location yet' : `No ${filter}s found`}
+            </Text>
+          </Card>
+        )}
+      </ScrollView>
+    </YStack>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f8fafc',
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 20,
-    paddingTop: 60,
-    backgroundColor: '#fff',
-    borderBottomLeftRadius: 24,
-    borderBottomRightRadius: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 5,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#1e293b',
-  },
-  addButton: {
-    backgroundColor: '#3b82f6',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 25,
-    shadowColor: '#3b82f6',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 5,
-  },
-  addButtonText: {
-    color: '#fff',
-    fontWeight: '700',
-    fontSize: 14,
-  },
-  content: {
-    flex: 1,
-  },
-  filtersContainer: {
-    paddingVertical: 16,
-  },
-  filtersContent: {
-    paddingHorizontal: 20,
-    gap: 8,
-  },
-  filterButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: '#f1f5f9',
-    borderWidth: 1,
-    borderColor: '#e2e8f0',
-  },
-  filterButtonActive: {
-    backgroundColor: '#3b82f6',
-    borderColor: '#3b82f6',
-  },
-  filterButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#64748b',
-  },
-  filterButtonTextActive: {
-    color: '#fff',
-  },
-  listContainer: {
-    padding: 20,
-    paddingTop: 0,
-  },
-  userCard: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
-    flexDirection: 'row',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  userAvatar: {
-    width: 60,
-    height: 60,
-    backgroundColor: '#e0e7ff',
-    borderRadius: 30,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 16,
-  },
-  userInitials: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#3b82f6',
-  },
-  userContent: {
-    flex: 1,
-  },
-  userHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 4,
-  },
-  userName: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#1e293b',
-    flex: 1,
-  },
-  roleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  roleIcon: {
-    fontSize: 16,
-  },
-  roleBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  roleText: {
-    color: '#fff',
-    fontSize: 10,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-  },
-  userEmail: {
-    fontSize: 14,
-    color: '#64748b',
-    marginBottom: 8,
-  },
-  userMeta: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  joinDate: {
-    fontSize: 12,
-    color: '#94a3b8',
-  },
-  emptyContainer: {
-    alignItems: 'center',
-    paddingVertical: 64,
-    paddingHorizontal: 40,
-  },
-  emptyText: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#64748b',
-    marginBottom: 8,
-    textAlign: 'center',
-  },
-  emptySubtext: {
-    fontSize: 14,
-    color: '#94a3b8',
-    textAlign: 'center',
-  },
-  accessDeniedContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 40,
-  },
-  accessDeniedTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#ef4444',
-    marginBottom: 16,
-    textAlign: 'center',
-  },
-  accessDeniedText: {
-    fontSize: 16,
-    color: '#64748b',
-    textAlign: 'center',
-    marginBottom: 32,
-    lineHeight: 24,
-  },
-  backButton: {
-    backgroundColor: '#3b82f6',
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 12,
-  },
-  backButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-});

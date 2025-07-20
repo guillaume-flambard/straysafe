@@ -1,7 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, ScrollView, Alert } from 'react-native';
+import { Alert } from 'react-native';
+import {
+  YStack,
+  XStack,
+  Text,
+  Card,
+  Button,
+  ScrollView,
+  Spinner,
+  View,
+  useTheme
+} from 'tamagui';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
+import { Calendar } from 'lucide-react-native';
 
 type CalendarEvent = {
   id: string;
@@ -17,6 +29,7 @@ export default function CalendarScreen() {
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const { userProfile } = useAuth();
+  const theme = useTheme();
 
   useEffect(() => {
     if (userProfile) {
@@ -92,284 +105,218 @@ export default function CalendarScreen() {
   };
 
   const renderEvent = (event: CalendarEvent) => (
-    <TouchableOpacity key={event.id} style={styles.eventCard}>
-      <View style={styles.eventHeader}>
-        <View style={styles.eventTypeContainer}>
-          <Text style={styles.eventIcon}>{getEventTypeIcon(event.type)}</Text>
-          <View style={[styles.eventTypeBadge, { backgroundColor: getEventTypeColor(event.type) }]}>
-            <Text style={styles.eventTypeText}>{event.type}</Text>
+    <Card
+      key={event.id}
+      elevate
+      size="$4"
+      bordered
+      animation="bouncy"
+      scale={0.9}
+      hoverStyle={{ scale: 0.925 }}
+      pressStyle={{ scale: 0.875 }}
+      backgroundColor="$backgroundSoft"
+      borderColor="$borderColor"
+      marginBottom="$3"
+      padding="$4"
+    >
+      <XStack justifyContent="space-between" alignItems="center" marginBottom="$3">
+        <XStack alignItems="center" gap="$2">
+          <Text fontSize="$5">{getEventTypeIcon(event.type)}</Text>
+          <View
+            backgroundColor={getEventTypeColor(event.type)}
+            paddingHorizontal="$3"
+            paddingVertical="$1"
+            borderRadius="$3"
+          >
+            <Text fontSize="$2" color="white" fontWeight="700" textTransform="uppercase">
+              {event.type}
+            </Text>
           </View>
-        </View>
-        <Text style={styles.eventDate}>{formatDate(event.date)}</Text>
-      </View>
+        </XStack>
+        <Text fontSize="$3" color="$color11" fontWeight="600">
+          {formatDate(event.date)}
+        </Text>
+      </XStack>
       
-      <Text style={styles.eventTitle}>{event.title}</Text>
+      <Text fontSize="$5" fontWeight="600" color="$color12" marginBottom="$2">
+        {event.title}
+      </Text>
       
       {event.description && (
-        <Text style={styles.eventDescription}>{event.description}</Text>
+        <Text fontSize="$3" color="$color11" lineHeight="$1">
+          {event.description}
+        </Text>
       )}
-    </TouchableOpacity>
+    </Card>
   );
 
   const canManageEvents = userProfile?.role === 'admin' || userProfile?.role === 'volunteer';
 
+  if (loading) {
+    return (
+      <YStack flex={1} justifyContent="center" alignItems="center" backgroundColor="$background">
+        <Spinner size="large" color="$blue10" />
+        <Text fontSize="$4" color="$color11" marginTop="$4">
+          Loading calendar...
+        </Text>
+      </YStack>
+    );
+  }
+
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Calendar</Text>
-        {canManageEvents && (
-          <TouchableOpacity 
-            style={styles.addButton}
-            onPress={() => Alert.alert('Add Event', 'To add an event, go to a specific dog\'s profile and use the timeline section.')}
-          >
-            <Text style={styles.addButtonText}>+ Add Event</Text>
-          </TouchableOpacity>
-        )}
-      </View>
-      
-      <ScrollView 
-        style={styles.content} 
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
+    <YStack flex={1} backgroundColor="$background">
+      {/* Glassmorphism Header */}
+      <XStack
+        justifyContent="space-between"
+        alignItems="center"
+        paddingHorizontal="$6"
+        paddingVertical="$4"
+        paddingTop="$12"
+        backgroundColor="$backgroundStrong"
+        borderBottomLeftRadius="$glass"
+        borderBottomRightRadius="$glass"
+        borderBottomWidth={1}
+        borderBottomColor="$borderColor"
+        shadowColor="$shadowColor"
+        shadowOffset={{ width: 0, height: 4 }}
+        shadowOpacity={0.15}
+        shadowRadius={12}
+        elevation={8}
       >
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>📅 Upcoming Events</Text>
+        <Text fontSize="$8" fontWeight="bold" color="$color12">
+          Calendar
+        </Text>
+        {canManageEvents && (
+          <Button
+            icon={Calendar}
+            size="$4"
+            variant="outlined"
+            backgroundColor="$blue10"
+            borderColor="$blue10"
+            color="white"
+            borderRadius="$button"
+            onPress={() => Alert.alert('Add Event', 'To add an event, go to a specific dog\'s profile and use the timeline section.')}
+            hoverStyle={{ backgroundColor: '$blue11' }}
+            pressStyle={{ backgroundColor: '$blue9' }}
+          >
+            + Event
+          </Button>
+        )}
+      </XStack>
+      
+      <ScrollView
+        flex={1}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ padding: 16, paddingBottom: 120 }}
+      >
+        <YStack marginBottom="$8">
+          <Text fontSize="$6" fontWeight="bold" color="$color12" marginBottom="$4">
+            📅 Upcoming Events
+          </Text>
           
-          {loading ? (
-            <View style={styles.loadingContainer}>
-              <Text style={styles.loadingText}>Loading events...</Text>
-            </View>
-          ) : events.length > 0 ? (
-            <View style={styles.eventsContainer}>
+          {events.length > 0 ? (
+            <YStack gap="$3">
               {events.map(renderEvent)}
-            </View>
+            </YStack>
           ) : (
-            <View style={styles.emptyContainer}>
-              <Text style={styles.emptyText}>No upcoming events</Text>
-              <Text style={styles.emptySubtext}>
+            <Card
+              elevate
+              size="$4"
+              bordered
+              backgroundColor="$backgroundSoft"
+              borderColor="$borderColor"
+              padding="$8"
+              alignItems="center"
+            >
+              <Text fontSize="$5" fontWeight="600" color="$color11" textAlign="center">
+                No upcoming events
+              </Text>
+              <Text fontSize="$3" color="$color10" textAlign="center" marginTop="$2">
                 {canManageEvents ? 'Add your first event!' : 'Check back later for updates'}
               </Text>
-            </View>
+            </Card>
           )}
-        </View>
+        </YStack>
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>📊 Quick Stats</Text>
+        <YStack marginBottom="$8">
+          <Text fontSize="$6" fontWeight="bold" color="$color12" marginBottom="$4">
+            📊 Quick Stats
+          </Text>
           
-          <View style={styles.statsContainer}>
-            <View style={styles.statCard}>
-              <Text style={styles.statNumber}>3</Text>
-              <Text style={styles.statLabel}>This Week</Text>
-            </View>
-            <View style={styles.statCard}>
-              <Text style={styles.statNumber}>8</Text>
-              <Text style={styles.statLabel}>This Month</Text>
-            </View>
-            <View style={styles.statCard}>
-              <Text style={styles.statNumber}>2</Text>
-              <Text style={styles.statLabel}>Overdue</Text>
-            </View>
-          </View>
-        </View>
+          <XStack gap="$3">
+            <Card
+              flex={1}
+              elevate
+              size="$4"
+              bordered
+              backgroundColor="$backgroundSoft"
+              borderColor="$borderColor"
+              padding="$5"
+              alignItems="center"
+            >
+              <Text fontSize="$9" fontWeight="bold" color="$blue10" marginBottom="$1">
+                3
+              </Text>
+              <Text fontSize="$2" color="$color11" fontWeight="600" textAlign="center">
+                This Week
+              </Text>
+            </Card>
+            <Card
+              flex={1}
+              elevate
+              size="$4"
+              bordered
+              backgroundColor="$backgroundSoft"
+              borderColor="$borderColor"
+              padding="$5"
+              alignItems="center"
+            >
+              <Text fontSize="$9" fontWeight="bold" color="$blue10" marginBottom="$1">
+                8
+              </Text>
+              <Text fontSize="$2" color="$color11" fontWeight="600" textAlign="center">
+                This Month
+              </Text>
+            </Card>
+            <Card
+              flex={1}
+              elevate
+              size="$4"
+              bordered
+              backgroundColor="$backgroundSoft"
+              borderColor="$borderColor"
+              padding="$5"
+              alignItems="center"
+            >
+              <Text fontSize="$9" fontWeight="bold" color="$red10" marginBottom="$1">
+                2
+              </Text>
+              <Text fontSize="$2" color="$color11" fontWeight="600" textAlign="center">
+                Overdue
+              </Text>
+            </Card>
+          </XStack>
+        </YStack>
 
         {!canManageEvents && (
-          <View style={styles.infoCard}>
-            <Text style={styles.infoTitle}>ℹ️ Limited Access</Text>
-            <Text style={styles.infoText}>
+          <Card
+            backgroundColor="$yellow3"
+            padding="$4"
+            borderRadius="$4"
+            borderWidth={1}
+            borderColor="$yellow8"
+            marginTop="$5"
+          >
+            <Text fontSize="$4" fontWeight="bold" color="$yellow11" marginBottom="$2">
+              ℹ️ Limited Access
+            </Text>
+            <Text fontSize="$3" color="$yellow11" lineHeight="$1">
               You can view events but cannot create or modify them. Contact an admin for more permissions.
             </Text>
-          </View>
+          </Card>
         )}
       </ScrollView>
-    </SafeAreaView>
+    </YStack>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f8fafc',
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 20,
-    paddingTop: 60,
-    backgroundColor: '#fff',
-    borderBottomLeftRadius: 24,
-    borderBottomRightRadius: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 5,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#1e293b',
-  },
-  addButton: {
-    backgroundColor: '#3b82f6',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 25,
-    shadowColor: '#3b82f6',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 5,
-  },
-  addButtonText: {
-    color: '#fff',
-    fontWeight: '700',
-    fontSize: 14,
-  },
-  content: {
-    flex: 1,
-    padding: 20,
-  },
-  scrollContent: {
-    paddingBottom: 100, // Space for tab bar
-  },
-  section: {
-    marginBottom: 32,
-  },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#1e293b',
-    marginBottom: 16,
-  },
-  loadingContainer: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 40,
-    alignItems: 'center',
-  },
-  loadingText: {
-    fontSize: 16,
-    color: '#64748b',
-  },
-  eventsContainer: {
-    gap: 12,
-  },
-  eventCard: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  eventHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  eventTypeContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  eventIcon: {
-    fontSize: 20,
-  },
-  eventTypeBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  eventTypeText: {
-    color: '#fff',
-    fontSize: 11,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-  },
-  eventDate: {
-    fontSize: 14,
-    color: '#64748b',
-    fontWeight: '600',
-  },
-  eventTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#1e293b',
-    marginBottom: 8,
-  },
-  eventDescription: {
-    fontSize: 14,
-    color: '#64748b',
-    lineHeight: 20,
-  },
-  statsContainer: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  statCard: {
-    flex: 1,
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 20,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  statNumber: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#3b82f6',
-    marginBottom: 4,
-  },
-  statLabel: {
-    fontSize: 12,
-    color: '#64748b',
-    fontWeight: '600',
-    textAlign: 'center',
-  },
-  emptyContainer: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 40,
-    alignItems: 'center',
-  },
-  emptyText: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#64748b',
-    marginBottom: 8,
-    textAlign: 'center',
-  },
-  emptySubtext: {
-    fontSize: 14,
-    color: '#94a3b8',
-    textAlign: 'center',
-  },
-  infoCard: {
-    backgroundColor: '#fef3c7',
-    padding: 16,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#fbbf24',
-    marginTop: 20,
-  },
-  infoTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#92400e',
-    marginBottom: 8,
-  },
-  infoText: {
-    fontSize: 14,
-    color: '#92400e',
-    lineHeight: 20,
-  },
-});
