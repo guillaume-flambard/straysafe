@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, SafeAreaView, ActivityIndicator } from 'react-native';
+import { router } from 'expo-router';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
 import { Database } from '../../lib/database.types';
@@ -49,7 +50,11 @@ export default function DogsScreen() {
   };
 
   const renderDog = ({ item }: { item: Dog }) => (
-    <TouchableOpacity style={styles.dogCard} activeOpacity={0.7}>
+    <TouchableOpacity 
+      style={styles.dogCard} 
+      activeOpacity={0.7}
+      onPress={() => router.push(`/dog/${item.id}`)}
+    >
       <View style={styles.dogImagePlaceholder}>
         <Text style={styles.dogInitial}>{item.name.charAt(0)}</Text>
       </View>

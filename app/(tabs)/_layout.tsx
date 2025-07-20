@@ -11,7 +11,7 @@ import { useAuth } from '../../contexts/AuthContext';
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
-  const { session, loading } = useAuth();
+  const { session, loading, userProfile } = useAuth();
 
   useEffect(() => {
     if (!loading && !session) {
@@ -22,6 +22,8 @@ export default function TabLayout() {
   if (loading || !session) {
     return null;
   }
+
+  const isAdmin = userProfile?.role === 'admin';
 
   return (
     <Tabs
@@ -45,12 +47,21 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="explore"
+        name="calendar"
         options={{
-          title: 'Profile',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="person.fill" color={color} />,
+          title: 'Calendar',
+          tabBarIcon: ({ color }) => <IconSymbol size={28} name="calendar" color={color} />,
         }}
       />
+      {isAdmin && (
+        <Tabs.Screen
+          name="users"
+          options={{
+            title: 'Users',
+            tabBarIcon: ({ color }) => <IconSymbol size={28} name="person.2.fill" color={color} />,
+          }}
+        />
+      )}
       <Tabs.Screen
         name="settings"
         options={{
