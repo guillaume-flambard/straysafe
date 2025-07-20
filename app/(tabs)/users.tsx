@@ -193,7 +193,7 @@ export default function UsersScreen() {
           data={filteredUsers}
           renderItem={renderUser}
           keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.listContainer}
+          contentContainerStyle={[styles.listContainer, { paddingBottom: 100 }]}
           refreshing={loading}
           onRefresh={fetchUsers}
           ListEmptyComponent={

@@ -123,7 +123,7 @@ export default function DogsScreen() {
         data={dogs}
         renderItem={renderDog}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.listContainer}
+        contentContainerStyle={[styles.listContainer, { paddingBottom: 100 }]}
         refreshing={loading}
         onRefresh={fetchDogs}
         ListEmptyComponent={

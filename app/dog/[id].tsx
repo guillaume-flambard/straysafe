@@ -4,6 +4,7 @@ import { useLocalSearchParams, router } from 'expo-router';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
 import { Database } from '../../lib/database.types';
+import TimelineEventModal from '../../components/TimelineEventModal';
 
 type Dog = Database['public']['Tables']['dogs']['Row'];
 type Event = Database['public']['Tables']['events']['Row'];
@@ -13,6 +14,7 @@ export default function DogProfileScreen() {
   const [dog, setDog] = useState<Dog | null>(null);
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
+  const [modalVisible, setModalVisible] = useState(false);
   const { userProfile } = useAuth();
 
   useEffect(() => {
@@ -128,7 +130,11 @@ export default function DogProfileScreen() {
         <View style={styles.headerSpacer} />
       </View>
       
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        style={styles.content} 
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
         {/* Dog Header */}
         <View style={styles.dogHeaderCard}>
           <View style={styles.dogImagePlaceholder}>
@@ -211,7 +217,7 @@ export default function DogProfileScreen() {
             {canAddEvent && (
               <TouchableOpacity 
                 style={styles.addEventButton}
-                onPress={() => Alert.alert('Add Event', 'This feature will be implemented soon!')}
+                onPress={() => setModalVisible(true)}
               >
                 <Text style={styles.addEventButtonText}>+ Add Event</Text>
               </TouchableOpacity>
@@ -260,6 +266,15 @@ export default function DogProfileScreen() {
           )}
         </View>
       </ScrollView>
+
+      <TimelineEventModal
+        visible={modalVisible}
+        onClose={() => setModalVisible(false)}
+        dogId={id as string}
+        onEventAdded={() => {
+          fetchDogEvents();
+        }}
+      />
     </SafeAreaView>
   );
 }
@@ -314,6 +329,9 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     padding: 20,
+  },
+  scrollContent: {
+    paddingBottom: 100, // Space for tab bar
   },
   dogHeaderCard: {
     backgroundColor: '#fff',

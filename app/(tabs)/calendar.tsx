@@ -120,14 +120,18 @@ export default function CalendarScreen() {
         {canManageEvents && (
           <TouchableOpacity 
             style={styles.addButton}
-            onPress={() => Alert.alert('Add Event', 'This feature will be implemented soon!')}
+            onPress={() => Alert.alert('Add Event', 'To add an event, go to a specific dog\'s profile and use the timeline section.')}
           >
             <Text style={styles.addButtonText}>+ Add Event</Text>
           </TouchableOpacity>
         )}
       </View>
       
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        style={styles.content} 
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>📅 Upcoming Events</Text>
           
@@ -226,6 +230,9 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     padding: 20,
+  },
+  scrollContent: {
+    paddingBottom: 100, // Space for tab bar
   },
   section: {
     marginBottom: 32,

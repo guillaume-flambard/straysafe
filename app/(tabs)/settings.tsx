@@ -90,7 +90,11 @@ export default function SettingsScreen() {
         <Text style={styles.title}>Settings</Text>
       </View>
       
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        style={styles.content} 
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
         {/* Location Settings */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>📍 Location</Text>
@@ -126,7 +130,7 @@ export default function SettingsScreen() {
 
             {selectedLocationName && selectedLocation !== userProfile?.location_id && (
               <View style={styles.previewCard}>
-                <Text style={styles.previewTitle}>You'll see dogs from:</Text>
+                <Text style={styles.previewTitle}>You&apos;ll see dogs from:</Text>
                 <Text style={styles.previewLocation}>
                   📍 {selectedLocationName.name}, {selectedLocationName.country}
                 </Text>
@@ -218,6 +222,9 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     padding: 20,
+  },
+  scrollContent: {
+    paddingBottom: 100, // Space for tab bar
   },
   section: {
     marginBottom: 32,
