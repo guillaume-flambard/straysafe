@@ -1,9 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, SafeAreaView, ActivityIndicator } from 'react-native';
+import { View, ScrollView, TouchableOpacity, StyleSheet, SafeAreaView, ActivityIndicator } from 'react-native';
 import { router } from 'expo-router';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
 import { Database } from '../../lib/database.types';
+import { Typography } from '../../components/design-system/Typography';
+import { Button } from '../../components/design-system/Button';
+import { Card } from '../../components/design-system/Card';
+import { BentoGrid, BentoItem } from '../../components/design-system/BentoGrid';
+import { Colors, Spacing, BorderRadius, Shadows } from '../../constants/DesignTokens';
 
 type Dog = Database['public']['Tables']['dogs']['Row'];
 
@@ -49,58 +54,92 @@ export default function DogsScreen() {
     }
   };
 
-  const renderDog = ({ item }: { item: Dog }) => (
-    <TouchableOpacity 
-      style={styles.dogCard} 
-      activeOpacity={0.7}
-      onPress={() => router.push(`/dog/${item.id}`)}
-    >
-      <View style={styles.dogImagePlaceholder}>
-        <Text style={styles.dogInitial}>{item.name.charAt(0)}</Text>
-      </View>
-      
-      <View style={styles.dogContent}>
-        <View style={styles.dogHeader}>
-          <Text style={styles.dogName}>{item.name}</Text>
-          <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) }]}>
-            <Text style={styles.statusText}>{item.status}</Text>
-          </View>
-        </View>
-        
-        <View style={styles.dogInfo}>
-          <Text style={styles.dogDetail}>
-            {item.gender === 'male' ? '♂️' : '♀️'} {item.gender} • {item.sterilized ? '✅ Sterilized' : '❌ Not sterilized'}
-          </Text>
-          {item.birth_date && (
-            <Text style={styles.dogAge}>
-              🎂 {new Date().getFullYear() - new Date(item.birth_date).getFullYear()} years old
-            </Text>
-          )}
-        </View>
-        
-        {item.location_text && (
-          <Text style={styles.dogLocation}>📍 {item.location_text}</Text>
-        )}
-        
-        {item.notes && (
-          <Text style={styles.dogNotes} numberOfLines={2}>💭 {item.notes}</Text>
-        )}
-        
-        {item.tags.length > 0 && (
-          <View style={styles.tagsContainer}>
-            {item.tags.slice(0, 3).map((tag, index) => (
-              <View key={index} style={styles.tag}>
-                <Text style={styles.tagText}>{tag}</Text>
+  const renderDogCard = (item: Dog, index: number) => {
+    // Create dynamic layout pattern for bento grid
+    const isWide = index % 5 === 0; // Every 5th item is wide
+    const span = isWide ? 2 : 1;
+    const aspectRatio = isWide ? 1.2 : 1;
+
+    return (
+      <BentoItem 
+        key={item.id} 
+        span={span} 
+        aspectRatio={aspectRatio}
+      >
+        <TouchableOpacity 
+          style={styles.dogCard} 
+          activeOpacity={0.8}
+          onPress={() => router.push(`/dog/${item.id}`)}
+        >
+          <Card variant="neumorphic" padding="lg" style={styles.cardContainer}>
+            {/* Dog Avatar */}
+            <View style={styles.dogImagePlaceholder}>
+              <Typography variant="display-small" color="brand">
+                {item.name.charAt(0)}
+              </Typography>
+            </View>
+            
+            {/* Dog Info */}
+            <View style={styles.dogContent}>
+              <View style={styles.dogHeader}>
+                <Typography 
+                  variant={isWide ? "h2" : "h3"} 
+                  color="primary" 
+                  numberOfLines={1}
+                  style={styles.dogName}
+                >
+                  {item.name}
+                </Typography>
+                
+                <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) }]}>
+                  <Typography variant="caption" color="white">
+                    {item.status}
+                  </Typography>
+                </View>
               </View>
-            ))}
-            {item.tags.length > 3 && (
-              <Text style={styles.moreTagsText}>+{item.tags.length - 3} more</Text>
-            )}
-          </View>
-        )}
-      </View>
-    </TouchableOpacity>
-  );
+              
+              <View style={styles.dogMeta}>
+                <Typography variant="body-small" color="secondary" numberOfLines={1}>
+                  {item.gender === 'male' ? '♂️' : '♀️'} {item.gender}
+                  {item.birth_date && ` • ${new Date().getFullYear() - new Date(item.birth_date).getFullYear()}y`}
+                </Typography>
+                
+                {item.sterilized && (
+                  <Typography variant="body-small" color="secondary">
+                    ✅ Sterilized
+                  </Typography>
+                )}
+              </View>
+              
+              {item.location_text && isWide && (
+                <Typography variant="body-small" color="muted" numberOfLines={1}>
+                  📍 {item.location_text}
+                </Typography>
+              )}
+              
+              {/* Tags - only show on wide cards */}
+              {item.tags.length > 0 && isWide && (
+                <View style={styles.tagsContainer}>
+                  {item.tags.slice(0, 2).map((tag, tagIndex) => (
+                    <View key={tagIndex} style={styles.tag}>
+                      <Typography variant="caption" color="secondary">
+                        {tag}
+                      </Typography>
+                    </View>
+                  ))}
+                  {item.tags.length > 2 && (
+                    <Typography variant="caption" color="muted">
+                      +{item.tags.length - 2}
+                    </Typography>
+                  )}
+                </View>
+              )}
+            </View>
+          </Card>
+        </TouchableOpacity>
+      </BentoItem>
+    );
+  };
 
   if (loading) {
     return (
@@ -112,27 +151,46 @@ export default function DogsScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      {/* Header with exaggerated minimalism */}
       <View style={styles.header}>
-        <Text style={styles.title}>Dogs</Text>
-        <TouchableOpacity style={styles.addButton}>
-          <Text style={styles.addButtonText}>+ Add Dog</Text>
-        </TouchableOpacity>
+        <Typography variant="display-medium" color="primary">
+          Dogs
+        </Typography>
+        <Button 
+          title="+ Add Dog" 
+          variant="primary"
+          size="medium"
+          onPress={() => {/* TODO: Implement add dog */}}
+        />
       </View>
       
-      <FlatList
-        data={dogs}
-        renderItem={renderDog}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={[styles.listContainer, { paddingBottom: 100 }]}
+      <ScrollView 
+        style={styles.content}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
         refreshing={loading}
         onRefresh={fetchDogs}
-        ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>No dogs found</Text>
-            <Text style={styles.emptySubtext}>Add your first dog to get started</Text>
-          </View>
-        }
-      />
+      >
+        {dogs.length > 0 ? (
+          <BentoGrid>
+            {dogs.map((dog, index) => renderDogCard(dog, index))}
+          </BentoGrid>
+        ) : (
+          <Card variant="glass" style={styles.emptyContainer}>
+            <Typography variant="h1" color="primary" align="center">
+              No dogs found
+            </Typography>
+            <Typography 
+              variant="body-large" 
+              color="secondary" 
+              align="center"
+              style={styles.emptySubtext}
+            >
+              Add your first dog to get started
+            </Typography>
+          </Card>
+        )}
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -140,175 +198,113 @@ export default function DogsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8fafc',
+    backgroundColor: Colors.neutral[50],
   },
+  
   centerContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#f8fafc',
+    backgroundColor: Colors.neutral[50],
   },
+  
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 20,
-    paddingTop: 60,
-    backgroundColor: '#fff',
-    borderBottomLeftRadius: 24,
-    borderBottomRightRadius: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 5,
+    paddingHorizontal: Spacing.gutter,
+    paddingVertical: Spacing.lg,
+    paddingTop: Spacing.xxxl,
+    backgroundColor: Colors.neutral[0],
+    borderBottomLeftRadius: BorderRadius.xxl,
+    borderBottomRightRadius: BorderRadius.xxl,
+    ...Shadows.soft,
   },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#1e293b',
+  
+  content: {
+    flex: 1,
+    padding: Spacing.gutter,
   },
-  addButton: {
-    backgroundColor: '#3b82f6',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 25,
-    shadowColor: '#3b82f6',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 5,
+  
+  scrollContent: {
+    paddingBottom: 120, // Extra space for floating tab bar
   },
-  addButtonText: {
-    color: '#fff',
-    fontWeight: '700',
-    fontSize: 14,
-  },
-  listContainer: {
-    padding: 20,
-    paddingTop: 16,
-  },
+  
   dogCard: {
-    backgroundColor: '#fff',
-    borderRadius: 20,
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 5,
-    overflow: 'hidden',
-    flexDirection: 'row',
+    flex: 1,
+    height: '100%',
   },
+  
+  cardContainer: {
+    flex: 1,
+    height: '100%',
+  },
+  
   dogImagePlaceholder: {
-    width: 80,
-    height: 80,
-    backgroundColor: '#e0e7ff',
-    borderRadius: 16,
+    width: 60,
+    height: 60,
+    backgroundColor: Colors.primary[50],
+    borderRadius: BorderRadius.circle,
     justifyContent: 'center',
     alignItems: 'center',
-    margin: 16,
+    alignSelf: 'center',
+    marginBottom: Spacing.md,
   },
-  dogInitial: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#3b82f6',
-  },
+  
   dogContent: {
     flex: 1,
-    padding: 16,
-    paddingLeft: 0,
+    justifyContent: 'space-between',
   },
+  
   dogHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
+    alignItems: 'flex-start',
+    marginBottom: Spacing.sm,
   },
+  
   dogName: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#1e293b',
     flex: 1,
+    marginRight: Spacing.sm,
   },
+  
   statusBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    marginLeft: 8,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: 4,
+    borderRadius: BorderRadius.pill,
+    minWidth: 60,
+    alignItems: 'center',
   },
-  statusText: {
-    color: '#fff',
-    fontSize: 11,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
+  
+  dogMeta: {
+    gap: 4,
+    marginBottom: Spacing.sm,
   },
-  dogInfo: {
-    marginBottom: 8,
-  },
-  dogDetail: {
-    fontSize: 14,
-    color: '#64748b',
-    marginBottom: 4,
-  },
-  dogAge: {
-    fontSize: 13,
-    color: '#64748b',
-  },
-  dogLocation: {
-    fontSize: 13,
-    color: '#64748b',
-    marginBottom: 8,
-  },
-  dogNotes: {
-    fontSize: 13,
-    color: '#64748b',
-    fontStyle: 'italic',
-    marginBottom: 12,
-    lineHeight: 18,
-  },
+  
   tagsContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 6,
     alignItems: 'center',
   },
+  
   tag: {
-    backgroundColor: '#f1f5f9',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
+    backgroundColor: Colors.neutral[100],
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: 2,
+    borderRadius: BorderRadius.md,
     borderWidth: 1,
-    borderColor: '#e2e8f0',
+    borderColor: Colors.neutral[200],
   },
-  tagText: {
-    fontSize: 11,
-    color: '#475569',
-    fontWeight: '600',
-  },
-  moreTagsText: {
-    fontSize: 11,
-    color: '#94a3b8',
-    fontWeight: '500',
-  },
+  
   emptyContainer: {
     alignItems: 'center',
-    paddingVertical: 80,
-    paddingHorizontal: 40,
+    paddingVertical: Spacing.xxxl * 2,
+    paddingHorizontal: Spacing.xl,
+    marginTop: Spacing.xxxl,
   },
-  emptyText: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#64748b',
-    marginBottom: 8,
-    textAlign: 'center',
-  },
+  
   emptySubtext: {
-    fontSize: 16,
-    color: '#94a3b8',
-    textAlign: 'center',
-    lineHeight: 24,
+    marginTop: Spacing.md,
   },
 });
