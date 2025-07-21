@@ -11,7 +11,7 @@ import {
 } from 'tamagui'
 import { useAuth } from '../../contexts/AuthContext'
 import { router } from 'expo-router'
-import { UserPlus, MapPin } from 'lucide-react-native'
+import { UserPlus } from 'lucide-react-native'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 
 export default function SignUpScreen() {
@@ -20,39 +20,25 @@ export default function SignUpScreen() {
   const [confirmPassword, setConfirmPassword] = useState('')
   const [fullName, setFullName] = useState('')
   const [loading, setLoading] = useState(false)
-  const [selectedZone, setSelectedZone] = useState<string>('koh-phangan')
+  const [selectedZone, setSelectedZone] = useState<string>('')
   const { signUp } = useAuth()
 
-  // Available locations
-  const locations = [
-    { id: 'koh-phangan', name: 'Koh Phangan', country: 'Thailand', flag: '🇹🇭' },
-    { id: 'chiang-mai', name: 'Chiang Mai', country: 'Thailand', flag: '🇹🇭' },
-    { id: 'bali', name: 'Bali', country: 'Indonesia', flag: '🇮🇩' },
-    { id: 'athens', name: 'Athens', country: 'Greece', flag: '🇬🇷' },
-  ]
-
-  const handleLocationSelect = async (locationId: string) => {
-    setSelectedZone(locationId)
-    // Save to AsyncStorage for app-wide access
-    try {
-      await AsyncStorage.setItem('selected_rescue_zone', locationId)
-    } catch (error) {
-      console.error('Error saving selected zone:', error)
-    }
-  }
-
   useEffect(() => {
-    // Get the selected rescue zone from AsyncStorage if available
+    // Get the selected rescue zone from AsyncStorage (should be set from location-selection screen)
     const getSelectedZone = async () => {
       try {
         const zone = await AsyncStorage.getItem('selected_rescue_zone')
-        if (zone && locations.find(loc => loc.id === zone)) {
+        if (zone) {
           setSelectedZone(zone)
+        } else {
+          // If no zone selected, redirect back to location selection
+          Alert.alert('Location Required', 'Please select a rescue zone first', [
+            { text: 'OK', onPress: () => router.replace('/location-selection') }
+          ])
         }
-        // If no zone in storage or invalid zone, keep default 'koh-phangan'
       } catch (error) {
         console.error('Error getting selected zone:', error)
-        // Keep default on error
+        Alert.alert('Error', 'Could not load location preference')
       }
     }
     getSelectedZone()
@@ -174,44 +160,6 @@ export default function SignUpScreen() {
             }}
           />
 
-          {/* Location Selection */}
-          <YStack gap="$2">
-            <XStack alignItems="center" gap="$2" paddingHorizontal="$2">
-              <MapPin size={16} color="#6b7280" />
-              <Text fontSize="$3" color="#6b7280" fontWeight="500">
-                Rescue Location
-              </Text>
-            </XStack>
-            <XStack gap="$2" flexWrap="wrap">
-              {locations.map((location) => (
-                <Button
-                  key={location.id}
-                  size="$3"
-                  variant="outlined"
-                  backgroundColor={selectedZone === location.id ? "#3b82f6" : "rgba(255, 255, 255, 0.9)"}
-                  borderColor={selectedZone === location.id ? "#3b82f6" : "rgba(203, 213, 225, 0.6)"}
-                  color={selectedZone === location.id ? "white" : "#6b7280"}
-                  borderRadius={8}
-                  onPress={() => handleLocationSelect(location.id)}
-                  hoverStyle={{ 
-                    backgroundColor: selectedZone === location.id ? '#1d4ed8' : 'rgba(255, 255, 255, 0.95)' 
-                  }}
-                  pressStyle={{ 
-                    backgroundColor: selectedZone === location.id ? '#2563eb' : 'rgba(243, 244, 246, 0.9)' 
-                  }}
-                  flex={1}
-                  minWidth="48%"
-                >
-                  <XStack alignItems="center" gap="$1">
-                    <Text fontSize="$2">{location.flag}</Text>
-                    <Text fontSize="$3" fontWeight="500">
-                      {location.name}
-                    </Text>
-                  </XStack>
-                </Button>
-              ))}
-            </XStack>
-          </YStack>
           
           <Input
             size="$5"

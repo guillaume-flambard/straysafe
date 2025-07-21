@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import { Alert, Image } from 'react-native'
 import {
   YStack,
@@ -6,13 +6,10 @@ import {
   Text,
   Button,
   Card,
-  H1,
-  H2,
-  ScrollView,
-  useTheme
+  ScrollView
 } from 'tamagui'
 import { router } from 'expo-router'
-import { MapPin, ChevronRight } from 'lucide-react-native'
+import { MapPin, ChevronRight, Waves, Mountain, Building2, Trees } from 'lucide-react-native'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 
 type RescueZone = {
@@ -22,12 +19,13 @@ type RescueZone = {
   flag: string
   description: string
   active: boolean
+  icon: any
+  gradient: [string, string]
 }
 
 export default function LocationSelectionScreen() {
   const [selectedZone, setSelectedZone] = useState<string>('')
   const [loading, setLoading] = useState(false)
-  const theme = useTheme()
 
   // Predefined rescue zones - can be expanded
   const rescueZones: RescueZone[] = [
@@ -37,7 +35,9 @@ export default function LocationSelectionScreen() {
       country: 'Thailand',
       flag: '🇹🇭',
       description: 'Tropical island rescue operations',
-      active: true
+      active: true,
+      icon: Waves,
+      gradient: ['#06b6d4', '#0891b2']
     },
     {
       id: 'chiang-mai',
@@ -45,7 +45,9 @@ export default function LocationSelectionScreen() {
       country: 'Thailand', 
       flag: '🇹🇭',
       description: 'Northern Thailand rescue network',
-      active: true
+      active: true,
+      icon: Mountain,
+      gradient: ['#10b981', '#059669']
     },
     {
       id: 'bali',
@@ -53,7 +55,9 @@ export default function LocationSelectionScreen() {
       country: 'Indonesia',
       flag: '🇮🇩',
       description: 'Island rescue community',
-      active: true
+      active: true,
+      icon: Trees,
+      gradient: ['#f59e0b', '#d97706']
     },
     {
       id: 'athens',
@@ -61,7 +65,9 @@ export default function LocationSelectionScreen() {
       country: 'Greece',
       flag: '🇬🇷',
       description: 'Urban rescue operations',
-      active: false
+      active: false,
+      icon: Building2,
+      gradient: ['#6b7280', '#4b5563']
     }
   ]
 
@@ -90,113 +96,173 @@ export default function LocationSelectionScreen() {
   return (
     <YStack 
       flex={1} 
-      backgroundColor="$background" 
-      justifyContent="center" 
-      paddingHorizontal="$6"
-      paddingVertical="$8"
+      backgroundColor="linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)"
     >
-      {/* Header */}
-      <Card
-        elevate
-        size="$4"
-        bordered
-        backgroundColor="$backgroundStrong"
-        borderColor="$borderColor"
-        padding="$8"
-        marginBottom="$8"
+      {/* Header with Hero Section */}
+      <YStack
+        paddingHorizontal="$6"
+        paddingTop="$16"
+        paddingBottom="$8"
+        backgroundColor="transparent"
         alignItems="center"
-        shadowColor="$shadowColor"
-        shadowOffset={{ width: 0, height: 8 }}
-        shadowOpacity={0.2}
-        shadowRadius={16}
-        elevation={12}
-        borderRadius="12"
+        gap="$4"
       >
         <Image 
           source={require('../assets/images/straysafe_logo.png')} 
-          style={{ width: 100, height: 100, marginBottom: 16 }}
+          style={{ width: 120, height: 120, marginBottom: 8 }}
           resizeMode="contain"
         />
-        <H1 fontSize="$11" fontWeight="bold" color="#3b82f6" textAlign="center">
+        <Text 
+          fontSize="$9" 
+          fontWeight="200" 
+          color="#1e293b" 
+          textAlign="center"
+          letterSpacing={1}
+        >
           Welcome to StraySafe
-        </H1>
-        <H2 fontSize="$6" color="#6b7280" marginTop="$3" textAlign="center">
-          Select your rescue zone
-        </H2>
-        <Text fontSize="$4" color="$color10" marginTop="$2" textAlign="center">
-          Choose the region where you&apos;ll be helping stray dogs
         </Text>
-      </Card>
+        <Text 
+          fontSize="$5" 
+          color="#475569" 
+          textAlign="center"
+          fontWeight="500"
+        >
+          Choose your rescue zone
+        </Text>
+        <Text 
+          fontSize="$3" 
+          color="#64748b" 
+          textAlign="center" 
+          lineHeight="$1"
+          maxWidth="280px"
+        >
+          Select the region where you'll be helping stray dogs find safety and homes
+        </Text>
+      </YStack>
 
       {/* Zone Selection */}
       <ScrollView 
+        flex={1}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 100 }}
+        contentContainerStyle={{ 
+          paddingHorizontal: 24, 
+          paddingBottom: 140, 
+          gap: 16 
+        }}
       >
-        <YStack gap="$4">
-          {rescueZones.map((zone) => (
+        {rescueZones.map((zone) => {
+          const IconComponent = zone.icon
+          const isSelected = selectedZone === zone.id
+          
+          return (
             <Card
               key={zone.id}
               elevate
               size="$4"
               bordered
-              backgroundColor={selectedZone === zone.id ? "$blue3" : "$backgroundSoft"}
-              borderColor={selectedZone === zone.id ? "$blue8" : "$borderColor"}
-              padding="$4"
-              borderRadius="12"
-              shadowColor="$shadowColor"
-              shadowOffset={{ width: 0, height: 4 }}
+              backgroundColor={isSelected ? "rgba(59, 130, 246, 0.1)" : "rgba(255, 255, 255, 0.9)"}
+              borderColor={isSelected ? "#3b82f6" : "rgba(203, 213, 225, 0.6)"}
+              borderWidth={isSelected ? 2 : 1}
+              padding="$5"
+              borderRadius={16}
+              shadowColor="rgba(0, 0, 0, 0.1)"
+              shadowOffset={{ width: 0, height: 8 }}
               shadowOpacity={0.15}
-              shadowRadius={12}
-              elevation={8}
+              shadowRadius={16}
+              elevation={12}
               onPress={() => zone.active && setSelectedZone(zone.id)}
               opacity={zone.active ? 1 : 0.6}
-              hoverStyle={zone.active ? { backgroundColor: '$blue4' } : {}}
-              pressStyle={zone.active ? { backgroundColor: '$blue5' } : {}}
+              animation="bouncy"
+              scale={isSelected ? 1.02 : 1}
+              hoverStyle={zone.active ? { 
+                scale: 1.03,
+                backgroundColor: isSelected ? "rgba(59, 130, 246, 0.15)" : "rgba(255, 255, 255, 0.95)"
+              } : {}}
+              pressStyle={zone.active ? { 
+                scale: 0.98,
+                backgroundColor: isSelected ? "rgba(59, 130, 246, 0.2)" : "rgba(243, 244, 246, 0.9)"
+              } : {}}
+              marginBottom="$3"
             >
-              <XStack alignItems="center" justifyContent="space-between">
-                <XStack alignItems="center" gap="$4" flex={1}>
-                  <Text fontSize="$8">{zone.flag}</Text>
-                  <YStack flex={1}>
-                    <XStack alignItems="center" gap="$2">
+              <XStack alignItems="center" gap="$4">
+                {/* Icon and Flag */}
+                <YStack alignItems="center" gap="$2">
+                  <Card
+                    backgroundColor={isSelected ? zone.gradient[0] : "#f1f5f9"}
+                    borderRadius={12}
+                    padding="$3"
+                    shadowColor={zone.gradient[0]}
+                    shadowOffset={{ width: 0, height: 4 }}
+                    shadowOpacity={isSelected ? 0.3 : 0.1}
+                    shadowRadius={8}
+                    elevation={6}
+                  >
+                    <IconComponent 
+                      size={24} 
+                      color={isSelected ? "white" : zone.gradient[0]} 
+                    />
+                  </Card>
+                  <Text fontSize="$6">{zone.flag}</Text>
+                </YStack>
+
+                {/* Content */}
+                <YStack flex={1} gap="$1">
+                  <XStack alignItems="center" justifyContent="space-between">
+                    <XStack alignItems="center" gap="$2" flex={1}>
                       <Text 
                         fontSize="$6" 
-                        fontWeight="bold" 
-                        color={selectedZone === zone.id ? "$blue11" : "$color"}
+                        fontWeight="700" 
+                        color={isSelected ? "#3b82f6" : "#1e293b"}
                       >
                         {zone.name}
                       </Text>
                       {!zone.active && (
-                        <Text fontSize="$2" color="$orange9" backgroundColor="$orange3" 
-                              paddingHorizontal="$2" paddingVertical="$1" borderRadius="12">
-                          Coming Soon
-                        </Text>
+                        <Card
+                          backgroundColor="#fef3c7"
+                          borderColor="#f59e0b"
+                          borderWidth={1}
+                          paddingHorizontal="$2"
+                          paddingVertical="$0.5"
+                          borderRadius={8}
+                        >
+                          <Text fontSize="$1" color="#92400e" fontWeight="600">
+                            Coming Soon
+                          </Text>
+                        </Card>
                       )}
                     </XStack>
-                    <Text fontSize="$4" color="$color10" marginTop="$1">
-                      {zone.country}
-                    </Text>
-                    <Text fontSize="$3" color="$color9" marginTop="$2">
-                      {zone.description}
-                    </Text>
-                  </YStack>
-                </XStack>
-                
-                {zone.active && (
-                  <XStack alignItems="center" gap="$2">
-                    {selectedZone === zone.id && (
-                      <MapPin size={20} color="$blue9" />
+                    
+                    {zone.active && (
+                      <XStack alignItems="center" gap="$2">
+                        {isSelected && (
+                          <Card
+                            backgroundColor="#3b82f6"
+                            borderRadius={10}
+                            padding="$1"
+                          >
+                            <MapPin size={16} color="white" />
+                          </Card>
+                        )}
+                        <ChevronRight 
+                          size={20} 
+                          color={isSelected ? "#3b82f6" : "#94a3b8"} 
+                        />
+                      </XStack>
                     )}
-                    <ChevronRight 
-                      size={20} 
-                      color={selectedZone === zone.id ? "$blue9" : "$color9"} 
-                    />
                   </XStack>
-                )}
+                  
+                  <Text fontSize="$3" color="#64748b" fontWeight="500">
+                    {zone.country}
+                  </Text>
+                  
+                  <Text fontSize="$3" color="#64748b" marginTop="$1" lineHeight="$1">
+                    {zone.description}
+                  </Text>
+                </YStack>
               </XStack>
             </Card>
-          ))}
-        </YStack>
+          )
+        })}
       </ScrollView>
 
       {/* Continue Button */}
@@ -205,32 +271,57 @@ export default function LocationSelectionScreen() {
         bottom="$6"
         left="$6"
         right="$6"
-        backgroundColor="$backgroundSoft"
-        borderColor="$borderColor"
+        backgroundColor="rgba(255, 255, 255, 0.95)"
+        borderColor="rgba(203, 213, 225, 0.6)"
+        borderWidth={1}
         padding="$4"
-        borderRadius="12"
-        elevation={8}
+        borderRadius={16}
+        shadowColor="rgba(0, 0, 0, 0.1)"
+        shadowOffset={{ width: 0, height: 8 }}
+        shadowOpacity={0.15}
+        shadowRadius={16}
+        elevation={12}
       >
         <Button
           size="$5"
-          backgroundColor="#3b82f6"
-          borderColor="#3b82f6"
-          color="white"
-          borderRadius="12"
+          backgroundColor={selectedZone ? "#3b82f6" : "#e2e8f0"}
+          borderColor={selectedZone ? "#3b82f6" : "#e2e8f0"}
+          color={selectedZone ? "white" : "#94a3b8"}
+          borderRadius={12}
           onPress={handleZoneSelection}
           disabled={!selectedZone || loading}
-          hoverStyle={{ backgroundColor: '$blue11' }}
-          pressStyle={{ backgroundColor: '$blue9' }}
-          shadowColor="#3b82f6"
+          hoverStyle={{ 
+            backgroundColor: selectedZone ? '#1d4ed8' : '#e2e8f0',
+            scale: selectedZone ? 1.02 : 1
+          }}
+          pressStyle={{ 
+            backgroundColor: selectedZone ? '#2563eb' : '#e2e8f0',
+            scale: selectedZone ? 0.98 : 1
+          }}
+          shadowColor={selectedZone ? "#3b82f6" : "transparent"}
           shadowOffset={{ width: 0, height: 4 }}
-          shadowOpacity={0.3}
+          shadowOpacity={selectedZone ? 0.3 : 0}
           shadowRadius={8}
-          elevation={6}
-          icon={ChevronRight}
+          elevation={selectedZone ? 6 : 0}
+          icon={loading ? undefined : ChevronRight}
+          animation="bouncy"
         >
-          <Text fontSize="$5" fontWeight="600" color="white">
-            {loading ? 'Saving...' : 'Continue to StraySafe'}
-          </Text>
+          <XStack alignItems="center" gap="$2">
+            {loading && (
+              <Card
+                backgroundColor="rgba(255, 255, 255, 0.2)"
+                borderRadius={8}
+                padding="$1"
+                animation="slow"
+                scale={1.2}
+              >
+                <MapPin size={16} color="white" />
+              </Card>
+            )}
+            <Text fontSize="$5" fontWeight="600" color={selectedZone ? "white" : "#94a3b8"}>
+              {loading ? 'Saving location...' : selectedZone ? 'Continue to StraySafe' : 'Select a zone first'}
+            </Text>
+          </XStack>
         </Button>
       </Card>
     </YStack>

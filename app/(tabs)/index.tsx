@@ -1,23 +1,23 @@
-import React, { useState, useEffect } from 'react';
-import { Alert, Modal } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
-import { 
-  YStack, 
-  XStack, 
-  Text,
-  View,
-  Card,
+import { AlertTriangle, Filter, Grid, List, Plus, Search } from 'lucide-react-native';
+import React, { useEffect, useState } from 'react';
+import { Alert, Modal } from 'react-native';
+import {
+  Avatar,
   Button,
+  Card,
+  Input,
   ScrollView,
   Spinner,
-  Avatar,
-  Input
+  Text,
+  View,
+  XStack,
+  YStack
 } from 'tamagui';
-import { Plus, Filter, Search } from 'lucide-react-native';
 import { useAuth } from '../../contexts/AuthContext';
-import { supabase } from '../../lib/supabase';
 import { Database } from '../../lib/database.types';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { supabase } from '../../lib/supabase';
 
 type Dog = Database['public']['Tables']['dogs']['Row'];
 
@@ -30,6 +30,7 @@ export default function DogsScreen() {
   const [filterOpen, setFilterOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [genderFilter, setGenderFilter] = useState<string>('all');
+  const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
   const { userProfile } = useAuth();
 
   useEffect(() => {
@@ -146,107 +147,310 @@ export default function DogsScreen() {
     }
   };
 
-  const renderDogCard = (item: Dog) => (
-    <Card
-      key={item.id}
-      elevate
-      size="$4"
-      bordered
-      animation="bouncy"
-      scale={0.9}
-      hoverStyle={{ scale: 0.925 }}
-      pressStyle={{ scale: 0.875 }}
-      onPress={() => router.push(`/dog/${item.id}` as any)}
-      backgroundColor="$backgroundSoft"
-      borderColor="$borderColor"
-      marginBottom="$3"
-      padding="$4"
-    >
-      <XStack alignItems="center" gap="$3">
-        {item.photo_url ? (
-          <Avatar circular size="$6">
-            <Avatar.Image src={item.photo_url} />
-            <Avatar.Fallback backgroundColor="$blue4">
-              <Text fontFamily="$body" fontSize="$6" color="#3b82f6">
-                {item.name.charAt(0)}
+  const getTagIcon = (tag: string) => {
+    switch (tag.toLowerCase()) {
+      case 'urgent': return '🚨';
+      case 'puppy': return '🐶';
+      case 'senior': return '👴';
+      case 'shy': return '😟';
+      case 'friendly': return '😊';
+      case 'medical': return '🏥';
+      case 'special': return '⭐';
+      default: return '';
+    }
+  };
+
+  const getTagColor = (tag: string) => {
+    switch (tag.toLowerCase()) {
+      case 'urgent': return { bg: '#fef2f2', text: '#dc2626' };
+      case 'puppy': return { bg: '#f0f9ff', text: '#0369a1' };
+      case 'senior': return { bg: '#fefce8', text: '#ca8a04' };
+      case 'shy': return { bg: '#f3f4f6', text: '#6b7280' };
+      case 'friendly': return { bg: '#f0fdf4', text: '#16a34a' };
+      case 'medical': return { bg: '#fef2f2', text: '#dc2626' };
+      case 'special': return { bg: '#faf5ff', text: '#9333ea' };
+      default: return { bg: '#f3f4f6', text: '#6b7280' };
+    }
+  };
+
+  const renderDogCard = (item: Dog) => {
+    const isGridMode = viewMode === 'grid';
+    
+    return (
+      <Card
+        key={item.id}
+        elevate
+        size="$4"
+        bordered
+        animation="bouncy"
+        scale={0.9}
+        hoverStyle={{ scale: 0.925 }}
+        pressStyle={{ scale: 0.875 }}
+        onPress={() => router.push(`/dog/${item.id}` as any)}
+        backgroundColor="rgba(255, 255, 255, 0.95)"
+        borderColor="rgba(203, 213, 225, 0.6)"
+        marginBottom="$3"
+        marginRight={isGridMode ? "$3" : undefined}
+        padding="$4"
+        borderRadius={12}
+        shadowColor="rgba(0, 0, 0, 0.1)"
+        shadowOffset={{ width: 0, height: 4 }}
+        shadowOpacity={0.15}
+        shadowRadius={8}
+        elevation={6}
+        width={isGridMode ? "48%" : undefined}
+      >
+        {isGridMode ? (
+          // Grid layout (vertical)
+          <YStack gap="$3">
+            {/* Photo */}
+            <View position="relative">
+              {item.photo_url ? (
+                <View
+                  width="100%"
+                  height={120}
+                  borderRadius={8}
+                  overflow="hidden"
+                  backgroundColor="#f3f4f6"
+                >
+                  <Avatar size="$10" width="100%" height="100%" borderRadius={8}>
+                    <Avatar.Image src={item.photo_url} style={{ width: '100%', height: '100%' }} />
+                    <Avatar.Fallback backgroundColor="$blue4" justifyContent="center" alignItems="center">
+                      <Text fontSize="$8" fontWeight="bold" color="#3b82f6">
+                        {item.name.charAt(0)}
+                      </Text>
+                    </Avatar.Fallback>
+                  </Avatar>
+                </View>
+              ) : (
+                <View
+                  width="100%"
+                  height={120}
+                  borderRadius={8}
+                  backgroundColor="$blue4"
+                  justifyContent="center"
+                  alignItems="center"
+                >
+                  <Text fontSize="$8" fontWeight="bold" color="#3b82f6">
+                    {item.name.charAt(0)}
+                  </Text>
+                </View>
+              )}
+              
+              {/* Status badge */}
+              <View
+                position="absolute"
+                top={8}
+                right={8}
+                backgroundColor={getStatusColor(item.status)}
+                paddingHorizontal="$2"
+                paddingVertical="$1"
+                borderRadius={6}
+              >
+                <Text fontSize="$1" color="white" fontWeight="700" textTransform="uppercase">
+                  {item.status}
+                </Text>
+              </View>
+
+              {/* Urgent/Priority indicators */}
+              {item.tags.includes('urgent') && (
+                <View
+                  position="absolute"
+                  top={8}
+                  left={8}
+                  backgroundColor="#dc2626"
+                  paddingHorizontal="$2"
+                  paddingVertical="$1"
+                  borderRadius={6}
+                >
+                  <XStack alignItems="center" gap="$1">
+                    <AlertTriangle size={12} color="white" />
+                    <Text fontSize="$1" color="white" fontWeight="700">
+                      URGENT
+                    </Text>
+                  </XStack>
+                </View>
+              )}
+            </View>
+
+            {/* Info */}
+            <YStack gap="$2">
+              <Text fontSize="$4" fontWeight="700" color="#1e293b" numberOfLines={1}>
+                {item.name}
               </Text>
-            </Avatar.Fallback>
-          </Avatar>
-        ) : (
-          <Avatar circular size="$6" backgroundColor="$blue4">
-            <Text fontFamily="$body" fontSize="$6" color="#3b82f6">
-              {item.name.charAt(0)}
-            </Text>
-          </Avatar>
-        )}
-        
-        <YStack flex={1} gap="$1">
-          <XStack alignItems="center" gap="$2">
-            <Text fontSize="$5" fontWeight="600" color="$gray12" numberOfLines={1} flex={1}>
-              {item.name}
-            </Text>
-            {/* Tags */}
-            {item.tags && item.tags.length > 0 && (
-              <XStack gap="$1">
-                {item.tags.slice(0, 2).map((tag, index) => (
-                  <View
-                    key={index}
-                    backgroundColor="$orange3"
-                    paddingHorizontal="$1.5"
-                    paddingVertical="$0.5"
-                    borderRadius="$2"
-                  >
-                    <Text fontSize="$1" color="$orange11" fontWeight="600">
-                      {tag}
-                    </Text>
-                  </View>
-                ))}
-                {item.tags.length > 2 && (
-                  <View
-                    backgroundColor="$gray3"
-                    paddingHorizontal="$1.5"
-                    paddingVertical="$0.5"
-                    borderRadius="$2"
-                  >
-                    <Text fontSize="$1" color="#6b7280" fontWeight="600">
-                      +{item.tags.length - 2}
-                    </Text>
-                  </View>
+              
+              <XStack alignItems="center" gap="$2">
+                <Text fontSize="$2" color="#6b7280">
+                  {item.gender === 'male' ? '♂️' : '♀️'} {item.gender}
+                </Text>
+                {item.birth_date && (
+                  <Text fontSize="$2" color="#6b7280">
+                    • {new Date().getFullYear() - new Date(item.birth_date).getFullYear()}y
+                  </Text>
                 )}
               </XStack>
-            )}
+
+              {/* Tags */}
+              {item.tags && item.tags.length > 0 && (
+                <XStack gap="$1" flexWrap="wrap">
+                  {item.tags.slice(0, 3).map((tag, index) => {
+                    const tagColors = getTagColor(tag);
+                    return (
+                      <View
+                        key={index}
+                        backgroundColor={tagColors.bg}
+                        paddingHorizontal="$1.5"
+                        paddingVertical="$0.5"
+                        borderRadius={4}
+                      >
+                        <XStack alignItems="center" gap="$0.5">
+                          <Text fontSize="$1">{getTagIcon(tag)}</Text>
+                          <Text fontSize="$1" color={tagColors.text} fontWeight="600">
+                            {tag}
+                          </Text>
+                        </XStack>
+                      </View>
+                    );
+                  })}
+                  {item.tags.length > 3 && (
+                    <View
+                      backgroundColor="#f3f4f6"
+                      paddingHorizontal="$1.5"
+                      paddingVertical="$0.5"
+                      borderRadius={4}
+                    >
+                      <Text fontSize="$1" color="#6b7280" fontWeight="600">
+                        +{item.tags.length - 3}
+                      </Text>
+                    </View>
+                  )}
+                </XStack>
+              )}
+            </YStack>
+          </YStack>
+        ) : (
+          // List layout (horizontal)
+          <XStack alignItems="center" gap="$3">
+            {/* Photo */}
+            <View position="relative">
+              {item.photo_url ? (
+                <Avatar circular size="$7">
+                  <Avatar.Image src={item.photo_url} />
+                  <Avatar.Fallback backgroundColor="$blue4">
+                    <Text fontSize="$6" fontWeight="bold" color="#3b82f6">
+                      {item.name.charAt(0)}
+                    </Text>
+                  </Avatar.Fallback>
+                </Avatar>
+              ) : (
+                <Avatar circular size="$7" backgroundColor="$blue4">
+                  <Text fontSize="$6" fontWeight="bold" color="#3b82f6">
+                    {item.name.charAt(0)}
+                  </Text>
+                </Avatar>
+              )}
+              
+              {/* Priority indicator */}
+              {item.tags.includes('urgent') && (
+                <View
+                  position="absolute"
+                  top={-2}
+                  right={-2}
+                  backgroundColor="#dc2626"
+                  borderRadius={10}
+                  width={20}
+                  height={20}
+                  justifyContent="center"
+                  alignItems="center"
+                >
+                  <AlertTriangle size={12} color="white" />
+                </View>
+              )}
+            </View>
+            
+            {/* Main content */}
+            <YStack flex={1} gap="$1">
+              <XStack alignItems="center" justifyContent="space-between">
+                <Text fontSize="$5" fontWeight="700" color="#1e293b" numberOfLines={1} flex={1}>
+                  {item.name}
+                </Text>
+                <View
+                  backgroundColor={getStatusColor(item.status)}
+                  paddingHorizontal="$2"
+                  paddingVertical="$1"
+                  borderRadius={6}
+                >
+                  <Text fontSize="$2" color="white" fontWeight="600">
+                    {item.status}
+                  </Text>
+                </View>
+              </XStack>
+              
+              <XStack alignItems="center" gap="$2">
+                <Text fontSize="$3" color="#6b7280">
+                  {item.gender === 'male' ? '♂️' : '♀️'} {item.gender}
+                </Text>
+                {item.birth_date && (
+                  <Text fontSize="$3" color="#6b7280">
+                    • {new Date().getFullYear() - new Date(item.birth_date).getFullYear()}y
+                  </Text>
+                )}
+                {item.sterilized && (
+                  <XStack alignItems="center" gap="$1">
+                    <Text fontSize="$3" color="#059669">• ✅ Sterilized</Text>
+                  </XStack>
+                )}
+              </XStack>
+
+              {/* Tags */}
+              {item.tags && item.tags.length > 0 && (
+                <XStack gap="$1" flexWrap="wrap" marginTop="$1">
+                  {item.tags.slice(0, 4).map((tag, index) => {
+                    const tagColors = getTagColor(tag);
+                    return (
+                      <View
+                        key={index}
+                        backgroundColor={tagColors.bg}
+                        paddingHorizontal="$1.5"
+                        paddingVertical="$0.5"
+                        borderRadius={4}
+                      >
+                        <XStack alignItems="center" gap="$0.5">
+                          <Text fontSize="$1">{getTagIcon(tag)}</Text>
+                          <Text fontSize="$1" color={tagColors.text} fontWeight="600">
+                            {tag}
+                          </Text>
+                        </XStack>
+                      </View>
+                    );
+                  })}
+                  {item.tags.length > 4 && (
+                    <View
+                      backgroundColor="#f3f4f6"
+                      paddingHorizontal="$1.5"
+                      paddingVertical="$0.5"
+                      borderRadius={4}
+                    >
+                      <Text fontSize="$1" color="#6b7280" fontWeight="600">
+                        +{item.tags.length - 4}
+                      </Text>
+                    </View>
+                  )}
+                </XStack>
+              )}
+
+              {/* Location */}
+              {item.location_text && (
+                <Text fontSize="$2" color="#6b7280" marginTop="$1">
+                  📍 {item.location_text}
+                </Text>
+              )}
+            </YStack>
           </XStack>
-          <Text fontSize="$3" color="#6b7280">
-            {item.gender === 'male' ? '♂️' : '♀️'} {item.gender}
-            {item.birth_date && ` • ${new Date().getFullYear() - new Date(item.birth_date).getFullYear()}y`}
-          </Text>
-        </YStack>
-        
-        <View
-          backgroundColor={getStatusColor(item.status)}
-          paddingHorizontal="$2"
-          paddingVertical="$1"
-          borderRadius="$2"
-        >
-          <Text fontSize="$2" color="white" fontWeight="600">
-            {item.status}
-          </Text>
-        </View>
-      </XStack>
-      
-      {item.location_text && (
-        <Text fontSize="$3" color="#6b7280" marginTop="$2">
-          📍 {item.location_text}
-        </Text>
-      )}
-      
-      {item.sterilized && (
-        <Text fontSize="$3" color="$green10" marginTop="$2">
-          ✅ Sterilized
-        </Text>
-      )}
-    </Card>
-  );
+        )}
+      </Card>
+    );
+  };
 
   if (loading) {
     return (
@@ -288,20 +492,45 @@ export default function DogsScreen() {
               {filteredDogs.length} {filteredDogs.length === 1 ? 'dog' : 'dogs'} found
             </Text>
           </YStack>
-          <Button
-            icon={Plus}
-            size="$4"
-            variant="outlined"
-            backgroundColor="#3b82f6"
-            borderColor="#3b82f6"
-            color="white"
-            borderRadius="$button"
-            onPress={() => Alert.alert('Add Dog', 'Feature coming soon!')}
-            hoverStyle={{ backgroundColor: '$blue11' }}
-            pressStyle={{ backgroundColor: '$blue9' }}
-          >
-            Add Dog
-          </Button>
+          
+          <XStack gap="$2" alignItems="center">
+            {/* View toggle */}
+            <XStack backgroundColor="rgba(255, 255, 255, 0.9)" borderRadius={8} padding="$1" gap="$1">
+              <Button
+                size="$3"
+                backgroundColor={viewMode === 'list' ? "#3b82f6" : "transparent"}
+                color={viewMode === 'list' ? "white" : "#6b7280"}
+                borderRadius={6}
+                onPress={() => setViewMode('list')}
+                icon={List}
+                scaleIcon={0.9}
+              />
+              <Button
+                size="$3"
+                backgroundColor={viewMode === 'grid' ? "#3b82f6" : "transparent"}
+                color={viewMode === 'grid' ? "white" : "#6b7280"}
+                borderRadius={6}
+                onPress={() => setViewMode('grid')}
+                icon={Grid}
+                scaleIcon={0.9}
+              />
+            </XStack>
+            
+            <Button
+              icon={Plus}
+              size="$4"
+              variant="outlined"
+              backgroundColor="#3b82f6"
+              borderColor="#3b82f6"
+              color="white"
+              borderRadius="$button"
+              onPress={() => Alert.alert('Add Dog', 'Feature coming soon!')}
+              hoverStyle={{ backgroundColor: '$blue11' }}
+              pressStyle={{ backgroundColor: '$blue9' }}
+            >
+              Add Dog
+            </Button>
+          </XStack>
         </XStack>
 
         {/* Search and Filter */}
@@ -341,26 +570,55 @@ export default function DogsScreen() {
         contentContainerStyle={{ padding: 16, paddingBottom: 120 }}
       >
         {filteredDogs.length > 0 ? (
-          <YStack gap="$3">
-            {filteredDogs.map(renderDogCard)}
-          </YStack>
+          viewMode === 'grid' ? (
+            <XStack flexWrap="wrap" justifyContent="space-between" gap="$3">
+              {filteredDogs.map(renderDogCard)}
+            </XStack>
+          ) : (
+            <YStack gap="$3">
+              {filteredDogs.map(renderDogCard)}
+            </YStack>
+          )
         ) : (
           <Card
             elevate
             size="$4"
             bordered
-            backgroundColor="$backgroundSoft"
-            borderColor="$borderColor"
+            backgroundColor="rgba(255, 255, 255, 0.95)"
+            borderColor="rgba(203, 213, 225, 0.6)"
             padding="$8"
             marginTop="$8"
             alignItems="center"
+            borderRadius={12}
+            shadowColor="rgba(0, 0, 0, 0.1)"
+            shadowOffset={{ width: 0, height: 4 }}
+            shadowOpacity={0.15}
+            shadowRadius={8}
+            elevation={6}
           >
             <Text fontSize="$6" fontWeight="600" color="#6b7280" textAlign="center">
-              {dogs.length === 0 ? 'No dogs found' : 'No dogs match your filters'}
+              {dogs.length === 0 ? '🐕 No dogs found' : '🔍 No dogs match your filters'}
             </Text>
-            <Text fontSize="$4" color="#6b7280" textAlign="center" marginTop="$2">
-              {dogs.length === 0 ? 'Add your first dog to get started' : 'Try adjusting your search or filters'}
+            <Text fontSize="$4" color="#6b7280" textAlign="center" marginTop="$2" lineHeight="$1">
+              {dogs.length === 0 ? 'Add your first dog to get started with rescue operations' : 'Try adjusting your search terms or filters'}
             </Text>
+            {dogs.length > 0 && (
+              <Button
+                size="$3"
+                backgroundColor="transparent"
+                borderColor="#3b82f6"
+                color="#3b82f6"
+                borderRadius={8}
+                marginTop="$4"
+                onPress={() => {
+                  setSearchQuery('');
+                  setStatusFilter('all');
+                  setGenderFilter('all');
+                }}
+              >
+                Clear Filters
+              </Button>
+            )}
           </Card>
         )}
       </ScrollView>

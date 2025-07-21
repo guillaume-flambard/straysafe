@@ -9,6 +9,7 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
+      "bundleIdentifier": "com.zoanlogia.straysafe",
       "supportsTablet": true,
       "infoPlist": {
         "NSFaceIDUsageDescription": "This app uses Face ID for secure authentication to access your StraySafe account.",

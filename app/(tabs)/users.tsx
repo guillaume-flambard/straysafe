@@ -1,21 +1,21 @@
-import React, { useState, useEffect } from 'react';
+import { router } from 'expo-router';
+import { UserPlus } from 'lucide-react-native';
+import React, { useEffect, useState } from 'react';
 import { Alert } from 'react-native';
 import {
-  YStack,
-  XStack,
-  Text,
-  Card,
+  Avatar,
   Button,
+  Card,
   ScrollView,
   Spinner,
+  Text,
   View,
-  Avatar,
+  XStack,
+  YStack,
 } from 'tamagui';
 import { useAuth } from '../../contexts/AuthContext';
-import { supabase } from '../../lib/supabase';
-import { router } from 'expo-router';
 import { Database } from '../../lib/database.types';
-import { UserPlus } from 'lucide-react-native';
+import { supabase } from '../../lib/supabase';
 
 type User = Database['public']['Tables']['users']['Row'];
 
@@ -31,7 +31,7 @@ export default function UsersScreen() {
       router.replace('/(tabs)');
       return;
     }
-    
+
     if (userProfile) {
       fetchUsers();
     }
@@ -41,13 +41,13 @@ export default function UsersScreen() {
     if (!userProfile) return;
 
     setLoading(true);
-    
+
     let query = supabase
       .from('users')
       .select('*')
       .eq('location_id', userProfile.location_id)
       .order('created_at', { ascending: false });
-    
+
     if (filter !== 'all') {
       query = query.eq('role', filter);
     }
@@ -92,8 +92,8 @@ export default function UsersScreen() {
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { 
-      month: 'short', 
+    return date.toLocaleDateString('en-US', {
+      month: 'short',
       day: 'numeric',
       year: 'numeric'
     });
@@ -120,7 +120,7 @@ export default function UsersScreen() {
             {getInitials(item.full_name, item.email)}
           </Text>
         </Avatar>
-        
+
         <YStack flex={1} gap="$1">
           <XStack justifyContent="space-between" alignItems="center">
             <Text fontSize="$5" fontWeight="bold" color="$color12" numberOfLines={1} flex={1}>
@@ -140,11 +140,11 @@ export default function UsersScreen() {
               </View>
             </XStack>
           </XStack>
-          
+
           <Text fontSize="$3" color="#6b7280">
             {item.email}
           </Text>
-          
+
           <Text fontSize="$2" color="$color10">
             Joined {formatDate(item.created_at)}
           </Text>
@@ -182,7 +182,7 @@ export default function UsersScreen() {
             Users
           </Text>
         </XStack>
-        
+
         <YStack flex={1} justifyContent="center" alignItems="center" padding="$8">
           <Text fontSize="$8" fontWeight="bold" color="$red10" marginBottom="$4" textAlign="center">
             🚫 Access Denied
@@ -268,11 +268,11 @@ export default function UsersScreen() {
               color={filter === item.key ? "white" : "#6b7280"}
               borderRadius="$5"
               onPress={() => setFilter(item.key as any)}
-              hoverStyle={{ 
-                backgroundColor: filter === item.key ? '$blue11' : '$backgroundHover' 
+              hoverStyle={{
+                backgroundColor: filter === item.key ? '$blue11' : '$backgroundHover'
               }}
-              pressStyle={{ 
-                backgroundColor: filter === item.key ? '$blue9' : '$backgroundPress' 
+              pressStyle={{
+                backgroundColor: filter === item.key ? '$blue9' : '$backgroundPress'
               }}
             >
               {item.label} ({item.count})
