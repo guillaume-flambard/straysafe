@@ -526,7 +526,7 @@ export default function DogsScreen() {
             borderColor="#3b82f6"
             color="white"
             borderRadius="$button"
-            onPress={() => Alert.alert('Add Dog', 'Feature coming soon!')}
+            onPress={() => router.push('/add-dog')}
             hoverStyle={{ backgroundColor: '$blue11' }}
             pressStyle={{ backgroundColor: '$blue9' }}
           >

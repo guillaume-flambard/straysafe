@@ -14,6 +14,8 @@
       "infoPlist": {
         "NSFaceIDUsageDescription": "This app uses Face ID for secure authentication to access your StraySafe account.",
         "NSBiometricUsageDescription": "This app uses biometric authentication (Face ID or Touch ID) for secure access to your StraySafe account.",
+        "NSCameraUsageDescription": "This app needs access to camera to take photos of dogs for rescue documentation.",
+        "NSPhotoLibraryUsageDescription": "This app needs access to photo library to select photos of dogs for rescue documentation.",
         "NSAppTransportSecurity": {
           "NSAllowsArbitraryLoads": true,
           "NSExceptionDomains": {
@@ -31,7 +33,12 @@
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE"
+      ]
     },
     "web": {
       "bundler": "metro",
@@ -41,6 +48,7 @@
     "plugins": [
       "expo-router",
       "expo-local-authentication",
+      "expo-image-picker",
       [
         "expo-splash-screen",
         {
