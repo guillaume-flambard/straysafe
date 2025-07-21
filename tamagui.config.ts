@@ -1,10 +1,7 @@
 import { config } from '@tamagui/config/v3'
 import { createTamagui } from 'tamagui'
 
-const tamaguiConfig = createTamagui({
-  ...config,
-  // Les couleurs sont maintenant disponibles via @tamagui/colors
-})
+const tamaguiConfig = createTamagui(config)
 
 export default tamaguiConfig
 

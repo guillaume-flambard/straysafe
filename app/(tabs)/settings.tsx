@@ -184,7 +184,7 @@ export default function SettingsScreen() {
               padding="$3"
               borderRadius="$2"
             >
-              <Text fontSize="$4" color="$color11">
+              <Text fontSize="$4" color="#6b7280">
                 {currentLocationName ? `${currentLocationName.name}, ${currentLocationName.country}` : 'Not set'}
               </Text>
             </View>
@@ -201,7 +201,7 @@ export default function SettingsScreen() {
             <Text fontSize="$4" fontWeight="600" color="$color12" marginBottom="$2">
               Change Location
             </Text>
-            <Text fontSize="$3" color="$color11" marginBottom="$4">
+            <Text fontSize="$3" color="#6b7280" marginBottom="$4">
               Switch to see dogs from a different region
             </Text>
             
@@ -213,7 +213,7 @@ export default function SettingsScreen() {
               backgroundColor="$gray2"
               marginBottom="$3"
             >
-              <Text fontSize="$3" color="$color11" paddingHorizontal="$3" paddingTop="$2">
+              <Text fontSize="$3" color="#6b7280" paddingHorizontal="$3" paddingTop="$2">
                 🌍 Country
               </Text>
               <Picker
@@ -240,7 +240,7 @@ export default function SettingsScreen() {
               marginBottom="$4"
               opacity={selectedCountry ? 1 : 0.5}
             >
-              <Text fontSize="$3" color="$color11" paddingHorizontal="$3" paddingTop="$2">
+              <Text fontSize="$3" color="#6b7280" paddingHorizontal="$3" paddingTop="$2">
                 📍 City/Location
               </Text>
               <Picker
@@ -279,8 +279,8 @@ export default function SettingsScreen() {
 
             <Button
               size="$4"
-              backgroundColor={loading || selectedLocation === userProfile?.location_id ? "$gray8" : "$blue10"}
-              borderColor={loading || selectedLocation === userProfile?.location_id ? "$gray8" : "$blue10"}
+              backgroundColor={loading || selectedLocation === userProfile?.location_id ? "$gray8" : "#3b82f6"}
+              borderColor={loading || selectedLocation === userProfile?.location_id ? "$gray8" : "#3b82f6"}
               color="white"
               borderRadius="$3"
               onPress={updateUserLocation}
@@ -313,7 +313,7 @@ export default function SettingsScreen() {
             padding="$5"
           >
             <XStack justifyContent="space-between" alignItems="center">
-              <Text fontSize="$4" color="$color11" fontWeight="500">
+              <Text fontSize="$4" color="#6b7280" fontWeight="500">
                 Edit Profile
               </Text>
               <ChevronRight size={20} color={theme.color10?.val} />
@@ -334,7 +334,7 @@ export default function SettingsScreen() {
             padding="$5"
           >
             <XStack justifyContent="space-between" alignItems="center">
-              <Text fontSize="$4" color="$color11" fontWeight="500">
+              <Text fontSize="$4" color="#6b7280" fontWeight="500">
                 Notifications
               </Text>
               <ChevronRight size={20} color={theme.color10?.val} />
@@ -354,7 +354,7 @@ export default function SettingsScreen() {
             padding="$5"
           >
             <XStack justifyContent="space-between" alignItems="center">
-              <Text fontSize="$4" color="$color11" fontWeight="500">
+              <Text fontSize="$4" color="#6b7280" fontWeight="500">
                 Privacy
               </Text>
               <ChevronRight size={20} color={theme.color10?.val} />
@@ -382,7 +382,7 @@ export default function SettingsScreen() {
             padding="$5"
           >
             <XStack justifyContent="space-between" alignItems="center">
-              <Text fontSize="$4" color="$color11" fontWeight="500">
+              <Text fontSize="$4" color="#6b7280" fontWeight="500">
                 Help & Support
               </Text>
               <ChevronRight size={20} color={theme.color10?.val} />
@@ -402,7 +402,7 @@ export default function SettingsScreen() {
             padding="$5"
           >
             <XStack justifyContent="space-between" alignItems="center">
-              <Text fontSize="$4" color="$color11" fontWeight="500">
+              <Text fontSize="$4" color="#6b7280" fontWeight="500">
                 About
               </Text>
               <ChevronRight size={20} color={theme.color10?.val} />

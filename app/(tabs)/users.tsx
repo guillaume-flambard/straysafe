@@ -116,7 +116,7 @@ export default function UsersScreen() {
     >
       <XStack alignItems="center" gap="$4">
         <Avatar circular size="$6" backgroundColor="$blue4">
-          <Text fontFamily="$body" fontSize="$5" color="$blue10">
+          <Text fontFamily="$body" fontSize="$5" color="#3b82f6">
             {getInitials(item.full_name, item.email)}
           </Text>
         </Avatar>
@@ -141,7 +141,7 @@ export default function UsersScreen() {
             </XStack>
           </XStack>
           
-          <Text fontSize="$3" color="$color11">
+          <Text fontSize="$3" color="#6b7280">
             {item.email}
           </Text>
           
@@ -187,13 +187,13 @@ export default function UsersScreen() {
           <Text fontSize="$8" fontWeight="bold" color="$red10" marginBottom="$4" textAlign="center">
             🚫 Access Denied
           </Text>
-          <Text fontSize="$4" color="$color11" textAlign="center" marginBottom="$8" lineHeight="$2">
+          <Text fontSize="$4" color="#6b7280" textAlign="center" marginBottom="$8" lineHeight="$2">
             This section is only available to administrators.
           </Text>
           <Button
             size="$4"
-            backgroundColor="$blue10"
-            borderColor="$blue10"
+            backgroundColor="#3b82f6"
+            borderColor="#3b82f6"
             color="white"
             borderRadius="$button"
             onPress={() => router.replace('/(tabs)')}
@@ -210,8 +210,8 @@ export default function UsersScreen() {
   if (loading) {
     return (
       <YStack flex={1} justifyContent="center" alignItems="center" backgroundColor="$background">
-        <Spinner size="large" color="$blue10" />
-        <Text fontSize="$4" color="$color11" marginTop="$4">
+        <Spinner size="large" color="#3b82f6" />
+        <Text fontSize="$4" color="#6b7280" marginTop="$4">
           Loading users...
         </Text>
       </YStack>
@@ -244,8 +244,8 @@ export default function UsersScreen() {
           icon={UserPlus}
           size="$4"
           variant="outlined"
-          backgroundColor="$blue10"
-          borderColor="$blue10"
+          backgroundColor="#3b82f6"
+          borderColor="#3b82f6"
           color="white"
           borderRadius="$button"
           onPress={() => Alert.alert('Invite User', 'This feature will be implemented soon!')}
@@ -263,9 +263,9 @@ export default function UsersScreen() {
               key={item.key}
               size="$3"
               variant="outlined"
-              backgroundColor={filter === item.key ? "$blue10" : "$backgroundSoft"}
-              borderColor={filter === item.key ? "$blue10" : "$borderColor"}
-              color={filter === item.key ? "white" : "$color11"}
+              backgroundColor={filter === item.key ? "#3b82f6" : "$backgroundSoft"}
+              borderColor={filter === item.key ? "#3b82f6" : "$borderColor"}
+              color={filter === item.key ? "white" : "#6b7280"}
               borderRadius="$5"
               onPress={() => setFilter(item.key as any)}
               hoverStyle={{ 
@@ -302,7 +302,7 @@ export default function UsersScreen() {
             marginTop="$8"
             alignItems="center"
           >
-            <Text fontSize="$5" fontWeight="600" color="$color11" textAlign="center">
+            <Text fontSize="$5" fontWeight="600" color="#6b7280" textAlign="center">
               No users found
             </Text>
             <Text fontSize="$3" color="$color10" textAlign="center" marginTop="$2">

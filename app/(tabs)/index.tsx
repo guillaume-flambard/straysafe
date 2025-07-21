@@ -1,36 +1,92 @@
 import React, { useState, useEffect } from 'react';
-import { Alert } from 'react-native';
+import { Alert, Modal } from 'react-native';
 import { router } from 'expo-router';
 import { 
   YStack, 
   XStack, 
-  Text, 
-  useTheme,
+  Text,
   View,
   Card,
   Button,
   ScrollView,
   Spinner,
-  Avatar
+  Avatar,
+  Input
 } from 'tamagui';
-import { Plus } from 'lucide-react-native';
+import { Plus, Filter, Search } from 'lucide-react-native';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
 import { Database } from '../../lib/database.types';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 type Dog = Database['public']['Tables']['dogs']['Row'];
 
 export default function DogsScreen() {
   const [dogs, setDogs] = useState<Dog[]>([]);
+  const [filteredDogs, setFilteredDogs] = useState<Dog[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedZone, setSelectedZone] = useState<string>('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterOpen, setFilterOpen] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [genderFilter, setGenderFilter] = useState<string>('all');
   const { userProfile } = useAuth();
-  const theme = useTheme();
 
   useEffect(() => {
+    loadSelectedZone();
     if (userProfile) {
       fetchDogs();
     }
   }, [userProfile]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    applyFilters();
+  }, [dogs, searchQuery, statusFilter, genderFilter]);
+
+  const loadSelectedZone = async () => {
+    try {
+      const zone = await AsyncStorage.getItem('selected_rescue_zone');
+      if (zone) {
+        setSelectedZone(zone);
+      }
+    } catch (error) {
+      console.error('Error loading selected zone:', error);
+    }
+  };
+
+  const applyFilters = () => {
+    let filtered = dogs;
+
+    // Search filter
+    if (searchQuery.trim()) {
+      filtered = filtered.filter(dog => 
+        dog.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        dog.location_text?.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+
+    // Status filter
+    if (statusFilter !== 'all') {
+      filtered = filtered.filter(dog => dog.status === statusFilter);
+    }
+
+    // Gender filter
+    if (genderFilter !== 'all') {
+      filtered = filtered.filter(dog => dog.gender === genderFilter);
+    }
+
+    setFilteredDogs(filtered);
+  };
+
+  const getZoneDisplayName = (zoneId: string) => {
+    const zoneMap: Record<string, string> = {
+      'koh-phangan': 'Koh Phangan 🇹🇭',
+      'chiang-mai': 'Chiang Mai 🇹🇭',
+      'bali': 'Bali 🇮🇩',
+      'athens': 'Athens 🇬🇷'
+    };
+    return zoneMap[zoneId] || zoneId;
+  };
 
   const fetchDogs = async () => {
     if (!userProfile) return;
@@ -81,17 +137,60 @@ export default function DogsScreen() {
       padding="$4"
     >
       <XStack alignItems="center" gap="$3">
-        <Avatar circular size="$6" backgroundColor="$blue4">
-          <Text fontFamily="$body" fontSize="$6" color="$blue10">
-            {item.name.charAt(0)}
-          </Text>
-        </Avatar>
+        {item.photo_url ? (
+          <Avatar circular size="$6">
+            <Avatar.Image src={item.photo_url} />
+            <Avatar.Fallback backgroundColor="$blue4">
+              <Text fontFamily="$body" fontSize="$6" color="#3b82f6">
+                {item.name.charAt(0)}
+              </Text>
+            </Avatar.Fallback>
+          </Avatar>
+        ) : (
+          <Avatar circular size="$6" backgroundColor="$blue4">
+            <Text fontFamily="$body" fontSize="$6" color="#3b82f6">
+              {item.name.charAt(0)}
+            </Text>
+          </Avatar>
+        )}
         
         <YStack flex={1} gap="$1">
-          <Text fontSize="$5" fontWeight="600" color="$color12" numberOfLines={1}>
-            {item.name}
-          </Text>
-          <Text fontSize="$3" color="$color11">
+          <XStack alignItems="center" gap="$2">
+            <Text fontSize="$5" fontWeight="600" color="$gray12" numberOfLines={1} flex={1}>
+              {item.name}
+            </Text>
+            {/* Tags */}
+            {item.tags && item.tags.length > 0 && (
+              <XStack gap="$1">
+                {item.tags.slice(0, 2).map((tag, index) => (
+                  <View
+                    key={index}
+                    backgroundColor="$orange3"
+                    paddingHorizontal="$1.5"
+                    paddingVertical="$0.5"
+                    borderRadius="$2"
+                  >
+                    <Text fontSize="$1" color="$orange11" fontWeight="600">
+                      {tag}
+                    </Text>
+                  </View>
+                ))}
+                {item.tags.length > 2 && (
+                  <View
+                    backgroundColor="$gray3"
+                    paddingHorizontal="$1.5"
+                    paddingVertical="$0.5"
+                    borderRadius="$2"
+                  >
+                    <Text fontSize="$1" color="#6b7280" fontWeight="600">
+                      +{item.tags.length - 2}
+                    </Text>
+                  </View>
+                )}
+              </XStack>
+            )}
+          </XStack>
+          <Text fontSize="$3" color="#6b7280">
             {item.gender === 'male' ? '♂️' : '♀️'} {item.gender}
             {item.birth_date && ` • ${new Date().getFullYear() - new Date(item.birth_date).getFullYear()}y`}
           </Text>
@@ -110,7 +209,7 @@ export default function DogsScreen() {
       </XStack>
       
       {item.location_text && (
-        <Text fontSize="$3" color="$color10" marginTop="$2">
+        <Text fontSize="$3" color="#6b7280" marginTop="$2">
           📍 {item.location_text}
         </Text>
       )}
@@ -126,8 +225,8 @@ export default function DogsScreen() {
   if (loading) {
     return (
       <YStack flex={1} justifyContent="center" alignItems="center" backgroundColor="$background">
-        <Spinner size="large" color="$blue10" />
-        <Text fontSize="$4" color="$color11" marginTop="$4">
+        <Spinner size="large" color="#3b82f6" />
+        <Text fontSize="$4" color="#6b7280" marginTop="$4">
           Loading dogs...
         </Text>
       </YStack>
@@ -137,9 +236,7 @@ export default function DogsScreen() {
   return (
     <YStack flex={1} backgroundColor="$background">
       {/* Glassmorphism Header */}
-      <XStack
-        justifyContent="space-between"
-        alignItems="center"
+      <YStack
         paddingHorizontal="$6"
         paddingVertical="$4"
         paddingTop="$12"
@@ -153,34 +250,73 @@ export default function DogsScreen() {
         shadowOpacity={0.15}
         shadowRadius={12}
         elevation={8}
+        gap="$4"
       >
-        <Text fontSize="$8" fontWeight="bold" color="$color12">
-          Dogs
-        </Text>
-        <Button
-          icon={Plus}
-          size="$4"
-          variant="outlined"
-          backgroundColor="$blue10"
-          borderColor="$blue10"
-          color="white"
-          borderRadius="$button"
-          onPress={() => Alert.alert('Add Dog', 'Feature coming soon!')}
-          hoverStyle={{ backgroundColor: '$blue11' }}
-          pressStyle={{ backgroundColor: '$blue9' }}
-        >
-          Add Dog
-        </Button>
-      </XStack>
+        {/* Title and Location */}
+        <XStack justifyContent="space-between" alignItems="center">
+          <YStack flex={1}>
+            <Text fontSize="$8" fontWeight="bold" color="$gray12">
+              Dogs in {selectedZone ? getZoneDisplayName(selectedZone) : 'Unknown Location'}
+            </Text>
+            <Text fontSize="$4" color="#6b7280">
+              {filteredDogs.length} {filteredDogs.length === 1 ? 'dog' : 'dogs'} found
+            </Text>
+          </YStack>
+          <Button
+            icon={Plus}
+            size="$4"
+            variant="outlined"
+            backgroundColor="#3b82f6"
+            borderColor="#3b82f6"
+            color="white"
+            borderRadius="$button"
+            onPress={() => Alert.alert('Add Dog', 'Feature coming soon!')}
+            hoverStyle={{ backgroundColor: '$blue11' }}
+            pressStyle={{ backgroundColor: '$blue9' }}
+          >
+            Add Dog
+          </Button>
+        </XStack>
+
+        {/* Search and Filter */}
+        <XStack gap="$3" alignItems="center">
+          <XStack flex={1} alignItems="center" backgroundColor="$backgroundHover" borderColor="$borderColor" borderRadius="$button" borderWidth={1} paddingHorizontal="$3">
+            <Search size={16} color="#6b7280" />
+            <Input
+              flex={1}
+              size="$4"
+              placeholder="Search dogs..."
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              backgroundColor="transparent"
+              borderWidth={0}
+              fontSize="$3"
+              paddingHorizontal="$2"
+            />
+          </XStack>
+          <Button
+            size="$4"
+            variant="outlined"
+            backgroundColor="$backgroundHover"
+            borderColor="$borderColor"
+            color="#6b7280"
+            borderRadius="$button"
+            onPress={() => setFilterOpen(true)}
+            icon={Filter}
+          >
+            Filter
+          </Button>
+        </XStack>
+      </YStack>
       
       <ScrollView
         flex={1}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ padding: 16, paddingBottom: 120 }}
       >
-        {dogs.length > 0 ? (
-          <YStack space="$3">
-            {dogs.map(renderDogCard)}
+        {filteredDogs.length > 0 ? (
+          <YStack gap="$3">
+            {filteredDogs.map(renderDogCard)}
           </YStack>
         ) : (
           <Card
@@ -193,15 +329,109 @@ export default function DogsScreen() {
             marginTop="$8"
             alignItems="center"
           >
-            <Text fontSize="$6" fontWeight="600" color="$color11" textAlign="center">
-              No dogs found
+            <Text fontSize="$6" fontWeight="600" color="#6b7280" textAlign="center">
+              {dogs.length === 0 ? 'No dogs found' : 'No dogs match your filters'}
             </Text>
-            <Text fontSize="$4" color="$color10" textAlign="center" marginTop="$2">
-              Add your first dog to get started
+            <Text fontSize="$4" color="#6b7280" textAlign="center" marginTop="$2">
+              {dogs.length === 0 ? 'Add your first dog to get started' : 'Try adjusting your search or filters'}
             </Text>
           </Card>
         )}
       </ScrollView>
+
+      {/* Filter Modal */}
+      <Modal
+        visible={filterOpen}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setFilterOpen(false)}
+      >
+        <View flex={1} backgroundColor="rgba(0,0,0,0.5)" justifyContent="flex-end">
+          <Card
+            backgroundColor="$background"
+            borderTopLeftRadius="$6"
+            borderTopRightRadius="$6"
+            padding="$4"
+            gap="$4"
+            minHeight={400}
+          >
+            <Text fontSize="$6" fontWeight="bold" color="$gray12" textAlign="center">
+              Filter Dogs
+            </Text>
+            
+            {/* Status Filter */}
+            <YStack gap="$2">
+              <Text fontSize="$4" fontWeight="600" color="#6b7280">Status</Text>
+              <XStack gap="$2" flexWrap="wrap">
+                {['all', 'available', 'fostered', 'adopted', 'injured', 'missing'].map((status) => (
+                  <Button
+                    key={status}
+                    size="$3"
+                    variant="outlined"
+                    backgroundColor={statusFilter === status ? "#3b82f6" : "transparent"}
+                    borderColor="#3b82f6"
+                    color={statusFilter === status ? "white" : "#3b82f6"}
+                    onPress={() => setStatusFilter(status)}
+                    marginBottom="$2"
+                  >
+                    {status === 'all' ? 'All' : status.charAt(0).toUpperCase() + status.slice(1)}
+                  </Button>
+                ))}
+              </XStack>
+            </YStack>
+
+            {/* Gender Filter */}
+            <YStack gap="$2">
+              <Text fontSize="$4" fontWeight="600" color="#6b7280">Gender</Text>
+              <XStack gap="$2">
+                {['all', 'male', 'female'].map((gender) => (
+                  <Button
+                    key={gender}
+                    size="$3"
+                    variant="outlined"
+                    backgroundColor={genderFilter === gender ? "#3b82f6" : "transparent"}
+                    borderColor="#3b82f6"
+                    color={genderFilter === gender ? "white" : "#3b82f6"}
+                    onPress={() => setGenderFilter(gender)}
+                    flex={1}
+                  >
+                    {gender === 'all' ? 'All' : gender.charAt(0).toUpperCase() + gender.slice(1)}
+                  </Button>
+                ))}
+              </XStack>
+            </YStack>
+
+            {/* Reset and Close */}
+            <XStack gap="$3" marginTop="$4">
+              <Button
+                flex={1}
+                size="$4"
+                variant="outlined"
+                backgroundColor="transparent"
+                borderColor="$gray8"
+                color="#6b7280"
+                onPress={() => {
+                  setStatusFilter('all');
+                  setGenderFilter('all');
+                  setSearchQuery('');
+                }}
+              >
+                Reset All
+              </Button>
+              <Button
+                flex={1}
+                size="$4"
+                backgroundColor="#3b82f6"
+                borderColor="#3b82f6"
+                color="white"
+                onPress={() => setFilterOpen(false)}
+              >
+                Apply Filters
+              </Button>
+            </XStack>
+          </Card>
+        </View>
+      </Modal>
     </YStack>
   );
 }

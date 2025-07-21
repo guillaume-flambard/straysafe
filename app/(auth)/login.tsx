@@ -15,7 +15,7 @@ import {
 import { useAuth } from '../../contexts/AuthContext'
 import { supabase } from '../../lib/supabase'
 import { router } from 'expo-router'
-import { LogIn, Fingerprint } from 'lucide-react-native'
+import { LogIn, Fingerprint, Scan } from 'lucide-react-native'
 import * as LocalAuthentication from 'expo-local-authentication'
 import * as SecureStore from 'expo-secure-store'
 
@@ -26,6 +26,7 @@ export default function LoginScreen() {
   const [biometricLoading, setBiometricLoading] = useState(false)
   const [biometricAvailable, setBiometricAvailable] = useState(false)
   const [hasStoredCredentials, setHasStoredCredentials] = useState(false)
+  const [biometricType, setBiometricType] = useState('')
   const { signIn } = useAuth()
   const theme = useTheme()
 
@@ -38,7 +39,30 @@ export default function LoginScreen() {
     try {
       const compatible = await LocalAuthentication.hasHardwareAsync()
       const enrolled = await LocalAuthentication.isEnrolledAsync()
-      setBiometricAvailable(compatible && enrolled)
+      const supportedTypes = await LocalAuthentication.supportedAuthenticationTypesAsync()
+      
+      // Types: 1 = Face ID, 2 = Touch ID, 3 = Iris (Android)
+      const hasFaceID = supportedTypes.includes(LocalAuthentication.AuthenticationType.FACIAL_RECOGNITION)
+      const hasTouchID = supportedTypes.includes(LocalAuthentication.AuthenticationType.FINGERPRINT)
+      
+      console.log('Biometric check:', { 
+        compatible, 
+        enrolled, 
+        supportedTypes, 
+        hasFaceID, 
+        hasTouchID 
+      })
+      
+      setBiometricAvailable(compatible && enrolled && (hasFaceID || hasTouchID))
+      
+      // Set biometric type for UI display
+      if (hasFaceID) {
+        setBiometricType('Face ID')
+      } else if (hasTouchID) {
+        setBiometricType('Touch ID')
+      } else {
+        setBiometricType('Biometric')
+      }
     } catch (error) {
       console.error('Error checking biometric availability:', error)
     }
@@ -48,7 +72,10 @@ export default function LoginScreen() {
     try {
       const storedEmail = await SecureStore.getItemAsync('stored_email')
       const storedPassword = await SecureStore.getItemAsync('stored_password')
-      setHasStoredCredentials(!!(storedEmail && storedPassword))
+      const hasStored = !!(storedEmail && storedPassword)
+      
+      console.log('Stored credentials check:', { hasStored, hasEmail: !!storedEmail, hasPassword: !!storedPassword })
+      setHasStoredCredentials(hasStored)
       
       if (storedEmail) {
         setEmail(storedEmail)
@@ -64,9 +91,9 @@ export default function LoginScreen() {
       
       const result = await LocalAuthentication.authenticateAsync({
         promptMessage: 'Sign in to StraySafe',
-        subtitle: 'Use your fingerprint or Face ID',
         cancelLabel: 'Cancel',
-        disableDeviceFallback: false,
+        disableDeviceFallback: true, // Force biometric only, no passcode fallback
+        fallbackLabel: '', // Remove fallback option
       })
 
       if (result.success) {
@@ -78,13 +105,20 @@ export default function LoginScreen() {
           const { error } = await signIn(storedEmail, storedPassword)
           
           if (error) {
-            Alert.alert('Error', 'Automatic login failed')
+            Alert.alert('Error', 'Automatic login failed: ' + error.message)
           } else {
             router.replace('/(tabs)')
           }
         } else {
-          Alert.alert('Error', 'No saved login credentials found')
+          // Fallback: show regular login if no stored credentials
+          Alert.alert(
+            'No stored credentials', 
+            'Please sign in with your email and password to enable biometric authentication.',
+            [{ text: 'OK' }]
+          )
         }
+      } else if (result.error) {
+        Alert.alert('Authentication cancelled', result.error)
       }
     } catch (error) {
       console.error('Biometric authentication error:', error)
@@ -152,55 +186,43 @@ export default function LoginScreen() {
   return (
     <YStack 
       flex={1} 
-      backgroundColor="$background" 
+      backgroundColor="linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
       justifyContent="center" 
-      paddingHorizontal="$6"
-      paddingVertical="$8"
+      paddingHorizontal="$8"
+      paddingVertical="$12"
+      style={{
+        background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)'
+      }}
     >
-      {/* Glassmorphism Header */}
-      <Card
-        elevate
-        size="$4"
-        bordered
-        backgroundColor="$backgroundStrong"
-        borderColor="$borderColor"
-        padding="$8"
-        marginBottom="$8"
-        alignItems="center"
-        shadowColor="$shadowColor"
-        shadowOffset={{ width: 0, height: 8 }}
-        shadowOpacity={0.2}
-        shadowRadius={16}
-        elevation={12}
-        borderRadius="$glass"
-      >
+      {/* Logo Section */}
+      <YStack alignItems="center" marginBottom="$12">
         <Image 
           source={require('../../assets/images/straysafe_logo.png')} 
-          style={{ width: 80, height: 80, marginBottom: 8 }}
+          style={{ width: 180, height: 180, marginBottom: 16 }}
           resizeMode="contain"
         />
-        <H1 fontSize="$10" fontWeight="bold" color="$blue10" marginTop="$4" textAlign="center">
-          StraySafe
-        </H1>
-        <H2 fontSize="$5" color="$color11" marginTop="$2" textAlign="center">
+        <Text 
+          fontSize="$8" 
+          fontWeight="300" 
+          color="#1e293b" 
+          textAlign="center"
+          marginBottom="$2"
+          fontFamily="System"
+          letterSpacing={1}
+          style={{
+            fontFamily: 'System',
+            fontWeight: '200'
+          }}
+        >
+          Welcome to StraySafe
+        </Text>
+        <Text fontSize="$3" color="#64748b" textAlign="center" fontWeight="400">
           Sign in to continue
-        </H2>
-      </Card>
+        </Text>
+      </YStack>
       
-      <Card
-        elevate
-        size="$4"
-        bordered
-        backgroundColor="$backgroundSoft"
-        borderColor="$borderColor"
-        padding="$6"
-        borderRadius="$card"
-        shadowColor="$shadowColor"
-        shadowOffset={{ width: 0, height: 4 }}
-        shadowOpacity={0.15}
-        shadowRadius={12}
-        elevation={8}
-      >
+      {/* Form Section */}
+      <YStack gap="$6" maxWidth={400} alignSelf="center" width="100%">
         <YStack gap="$4">
           <Input
             size="$5"
@@ -209,15 +231,20 @@ export default function LoginScreen() {
             onChangeText={setEmail}
             keyboardType="email-address"
             autoCapitalize="none"
-            backgroundColor="$backgroundHover"
-            borderColor="$borderColor"
-            borderRadius="$button"
+            backgroundColor="rgba(255, 255, 255, 0.9)"
+            borderColor="rgba(203, 213, 225, 0.6)"
+            borderRadius={12}
             fontSize="$4"
             paddingHorizontal="$4"
             paddingVertical="$4"
+            shadowColor="rgba(0, 0, 0, 0.1)"
+            shadowOffset={{ width: 0, height: 2 }}
+            shadowOpacity={0.1}
+            shadowRadius={4}
             focusStyle={{
-              borderColor: '$blue10',
-              backgroundColor: '$backgroundFocus'
+              borderColor: '#3b82f6',
+              backgroundColor: 'rgba(255, 255, 255, 0.95)',
+              shadowOpacity: 0.2
             }}
           />
           
@@ -227,63 +254,131 @@ export default function LoginScreen() {
             value={password}
             onChangeText={setPassword}
             secureTextEntry
-            backgroundColor="$backgroundHover"
-            borderColor="$borderColor"
-            borderRadius="$button"
+            backgroundColor="rgba(255, 255, 255, 0.9)"
+            borderColor="rgba(203, 213, 225, 0.6)"
+            borderRadius={12}
             fontSize="$4"
             paddingHorizontal="$4"
             paddingVertical="$4"
+            shadowColor="rgba(0, 0, 0, 0.1)"
+            shadowOffset={{ width: 0, height: 2 }}
+            shadowOpacity={0.1}
+            shadowRadius={4}
             focusStyle={{
-              borderColor: '$blue10',
-              backgroundColor: '$backgroundFocus'
+              borderColor: '#3b82f6',
+              backgroundColor: 'rgba(255, 255, 255, 0.95)',
+              shadowOpacity: 0.2
             }}
           />
           
-          {/* Biometric Authentication Button */}
-          {biometricAvailable && hasStoredCredentials && (
-            <Button
-              size="$5"
-              backgroundColor="$green9"
-              borderColor="$green9"
-              color="white"
-              borderRadius="$button"
-              onPress={authenticateWithBiometrics}
-              disabled={biometricLoading}
-              hoverStyle={{ backgroundColor: '$green10' }}
-              pressStyle={{ backgroundColor: '$green8' }}
-              shadowColor="$green9"
-              shadowOffset={{ width: 0, height: 4 }}
-              shadowOpacity={0.3}
-              shadowRadius={8}
-              elevation={6}
-              icon={biometricLoading ? undefined : Fingerprint}
-            >
-              {biometricLoading ? (
-                <XStack alignItems="center" gap="$2">
-                  <Spinner size="small" color="white" />
-                  <Text fontSize="$4" fontWeight="600" color="white">
-                    Authenticating...
-                  </Text>
-                </XStack>
-              ) : (
-                <Text fontSize="$4" fontWeight="600" color="white">
-                  🔐 Quick Sign In
-                </Text>
+          {/* Debug info - remove in production */}
+          <Text fontSize="$2" color="$gray9" textAlign="center">
+            {biometricType}: {biometricAvailable ? '✅' : '❌'} | Stored: {hasStoredCredentials ? '✅' : '❌'}
+          </Text>
+          
+          {/* Biometric Authentication Buttons */}
+          {biometricAvailable && (
+            <XStack gap="$3" justifyContent="center" alignItems="center">
+              {/* Face ID Button - only show if Face ID is available */}
+              {biometricType === 'Face ID' && (
+                <Button
+                  size="$3"
+                  circular
+                  backgroundColor="transparent"
+                  borderColor="#6b7280"
+                  borderWidth={1}
+                  onPress={authenticateWithBiometrics}
+                  disabled={biometricLoading}
+                  hoverStyle={{ backgroundColor: '#f3f4f6' }}
+                  pressStyle={{ backgroundColor: '#e5e7eb' }}
+                  padding="$3"
+                >
+                  {biometricLoading ? (
+                    <Spinner size="small" color="#6b7280" />
+                  ) : (
+                    <Scan size={20} color="#6b7280" />
+                  )}
+                </Button>
               )}
-            </Button>
+              
+              {/* Touch ID Button - only show if Touch ID is available */}
+              {biometricType === 'Touch ID' && (
+                <Button
+                  size="$3"
+                  circular
+                  backgroundColor="transparent"
+                  borderColor="#6b7280"
+                  borderWidth={1}
+                  onPress={authenticateWithBiometrics}
+                  disabled={biometricLoading}
+                  hoverStyle={{ backgroundColor: '#f3f4f6' }}
+                  pressStyle={{ backgroundColor: '#e5e7eb' }}
+                  padding="$3"
+                >
+                  {biometricLoading ? (
+                    <Spinner size="small" color="#6b7280" />
+                  ) : (
+                    <Fingerprint size={20} color="#6b7280" />
+                  )}
+                </Button>
+              )}
+              
+              {/* Both available - show both buttons */}
+              {biometricType === 'Biometric' && (
+                <>
+                  <Button
+                    size="$3"
+                    circular
+                    backgroundColor="transparent"
+                    borderColor="#6b7280"
+                    borderWidth={1}
+                    onPress={authenticateWithBiometrics}
+                    disabled={biometricLoading}
+                    hoverStyle={{ backgroundColor: '#f3f4f6' }}
+                    pressStyle={{ backgroundColor: '#e5e7eb' }}
+                    padding="$3"
+                  >
+                    {biometricLoading ? (
+                      <Spinner size="small" color="#6b7280" />
+                    ) : (
+                      <Scan size={20} color="#6b7280" />
+                    )}
+                  </Button>
+                  
+                  <Button
+                    size="$3"
+                    circular
+                    backgroundColor="transparent"
+                    borderColor="#6b7280"
+                    borderWidth={1}
+                    onPress={authenticateWithBiometrics}
+                    disabled={biometricLoading}
+                    hoverStyle={{ backgroundColor: '#f3f4f6' }}
+                    pressStyle={{ backgroundColor: '#e5e7eb' }}
+                    padding="$3"
+                  >
+                    {biometricLoading ? (
+                      <Spinner size="small" color="#6b7280" />
+                    ) : (
+                      <Fingerprint size={20} color="#6b7280" />
+                    )}
+                  </Button>
+                </>
+              )}
+            </XStack>
           )}
           
           <Button
             size="$5"
-            backgroundColor="$blue10"
-            borderColor="$blue10"
+            backgroundColor="#3b82f6"
+            borderColor="#3b82f6"
             color="white"
-            borderRadius="$button"
+            borderRadius={12}
             onPress={handleSignIn}
             disabled={loading}
-            hoverStyle={{ backgroundColor: '$blue11' }}
-            pressStyle={{ backgroundColor: '$blue9' }}
-            shadowColor="$blue10"
+            hoverStyle={{ backgroundColor: '#1d4ed8' }}
+            pressStyle={{ backgroundColor: '#2563eb' }}
+            shadowColor="#3b82f6"
             shadowOffset={{ width: 0, height: 4 }}
             shadowOpacity={0.3}
             shadowRadius={8}
@@ -310,18 +405,18 @@ export default function LoginScreen() {
             variant="outlined"
             backgroundColor="transparent"
             borderColor="transparent"
-            color="$blue10"
+            color="#3b82f6"
             onPress={() => router.push('/(auth)/signup')}
-            hoverStyle={{ backgroundColor: '$blue3' }}
-            pressStyle={{ backgroundColor: '$blue4' }}
+            hoverStyle={{ backgroundColor: '#dbeafe' }}
+            pressStyle={{ backgroundColor: '#bfdbfe' }}
             marginTop="$2"
           >
-            <Text fontSize="$3" color="$blue10">
+            <Text fontSize="$3" color="#3b82f6">
               Don't have an account? Sign up
             </Text>
           </Button>
         </YStack>
-      </Card>
+      </YStack>
     </YStack>
   )
 }

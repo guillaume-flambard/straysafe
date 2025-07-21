@@ -133,7 +133,7 @@ export default function CalendarScreen() {
             </Text>
           </View>
         </XStack>
-        <Text fontSize="$3" color="$color11" fontWeight="600">
+        <Text fontSize="$3" color="#6b7280" fontWeight="600">
           {formatDate(event.date)}
         </Text>
       </XStack>
@@ -143,7 +143,7 @@ export default function CalendarScreen() {
       </Text>
       
       {event.description && (
-        <Text fontSize="$3" color="$color11" lineHeight="$1">
+        <Text fontSize="$3" color="#6b7280" lineHeight="$1">
           {event.description}
         </Text>
       )}
@@ -155,8 +155,8 @@ export default function CalendarScreen() {
   if (loading) {
     return (
       <YStack flex={1} justifyContent="center" alignItems="center" backgroundColor="$background">
-        <Spinner size="large" color="$blue10" />
-        <Text fontSize="$4" color="$color11" marginTop="$4">
+        <Spinner size="large" color="#3b82f6" />
+        <Text fontSize="$4" color="#6b7280" marginTop="$4">
           Loading calendar...
         </Text>
       </YStack>
@@ -191,8 +191,8 @@ export default function CalendarScreen() {
             icon={Calendar}
             size="$4"
             variant="outlined"
-            backgroundColor="$blue10"
-            borderColor="$blue10"
+            backgroundColor="#3b82f6"
+            borderColor="#3b82f6"
             color="white"
             borderRadius="$button"
             onPress={() => Alert.alert('Add Event', 'To add an event, go to a specific dog\'s profile and use the timeline section.')}
@@ -228,7 +228,7 @@ export default function CalendarScreen() {
               padding="$8"
               alignItems="center"
             >
-              <Text fontSize="$5" fontWeight="600" color="$color11" textAlign="center">
+              <Text fontSize="$5" fontWeight="600" color="#6b7280" textAlign="center">
                 No upcoming events
               </Text>
               <Text fontSize="$3" color="$color10" textAlign="center" marginTop="$2">
@@ -254,10 +254,10 @@ export default function CalendarScreen() {
               padding="$5"
               alignItems="center"
             >
-              <Text fontSize="$9" fontWeight="bold" color="$blue10" marginBottom="$1">
+              <Text fontSize="$9" fontWeight="bold" color="#3b82f6" marginBottom="$1">
                 3
               </Text>
-              <Text fontSize="$2" color="$color11" fontWeight="600" textAlign="center">
+              <Text fontSize="$2" color="#6b7280" fontWeight="600" textAlign="center">
                 This Week
               </Text>
             </Card>
@@ -271,10 +271,10 @@ export default function CalendarScreen() {
               padding="$5"
               alignItems="center"
             >
-              <Text fontSize="$9" fontWeight="bold" color="$blue10" marginBottom="$1">
+              <Text fontSize="$9" fontWeight="bold" color="#3b82f6" marginBottom="$1">
                 8
               </Text>
-              <Text fontSize="$2" color="$color11" fontWeight="600" textAlign="center">
+              <Text fontSize="$2" color="#6b7280" fontWeight="600" textAlign="center">
                 This Month
               </Text>
             </Card>
@@ -291,7 +291,7 @@ export default function CalendarScreen() {
               <Text fontSize="$9" fontWeight="bold" color="$red10" marginBottom="$1">
                 2
               </Text>
-              <Text fontSize="$2" color="$color11" fontWeight="600" textAlign="center">
+              <Text fontSize="$2" color="#6b7280" fontWeight="600" textAlign="center">
                 Overdue
               </Text>
             </Card>

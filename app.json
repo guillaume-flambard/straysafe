@@ -11,6 +11,8 @@
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
+        "NSFaceIDUsageDescription": "This app uses Face ID for secure authentication to access your StraySafe account.",
+        "NSBiometricUsageDescription": "This app uses biometric authentication (Face ID or Touch ID) for secure access to your StraySafe account.",
         "NSAppTransportSecurity": {
           "NSAllowsArbitraryLoads": true,
           "NSExceptionDomains": {
@@ -37,6 +39,7 @@
     },
     "plugins": [
       "expo-router",
+      "expo-local-authentication",
       [
         "expo-splash-screen",
         {

@@ -1,10 +1,25 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, ScrollView, Alert } from 'react-native';
-import { useLocalSearchParams, router } from 'expo-router';
-import { useAuth } from '../../contexts/AuthContext';
-import { supabase } from '../../lib/supabase';
-import { Database } from '../../lib/database.types';
+import { router, useLocalSearchParams } from 'expo-router';
+import { ArrowLeft, Plus } from 'lucide-react-native';
+import React, { useEffect, useState } from 'react';
+import { Alert } from 'react-native';
+import {
+  Avatar,
+  Button,
+  Card,
+  H3,
+  H4,
+  Paragraph,
+  ScrollView,
+  Spinner,
+  Text,
+  View,
+  XStack,
+  YStack,
+} from 'tamagui';
 import TimelineEventModal from '../../components/TimelineEventModal';
+import { useAuth } from '../../contexts/AuthContext';
+import { Database } from '../../lib/database.types';
+import { supabase } from '../../lib/supabase';
 
 type Dog = Database['public']['Tables']['dogs']['Row'];
 type Event = Database['public']['Tables']['events']['Row'];
@@ -13,7 +28,6 @@ export default function DogProfileScreen() {
   const { id } = useLocalSearchParams();
   const [dog, setDog] = useState<Dog | null>(null);
   const [events, setEvents] = useState<Event[]>([]);
-  const [loading, setLoading] = useState(true);
   const [modalVisible, setModalVisible] = useState(false);
   const { userProfile } = useAuth();
 
@@ -52,7 +66,6 @@ export default function DogProfileScreen() {
     } else {
       setEvents(data || []);
     }
-    setLoading(false);
   };
 
   const getStatusColor = (status: string) => {
@@ -109,162 +122,296 @@ export default function DogProfileScreen() {
 
   if (!dog) {
     return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.loadingContainer}>
-          <Text style={styles.loadingText}>Loading...</Text>
-        </View>
-      </SafeAreaView>
+      <YStack flex={1} justifyContent="center" alignItems="center" backgroundColor="$background">
+        <Spinner size="large" color="#3b82f6" />
+        <Text fontSize="$4" color="#6b7280" marginTop="$4">
+          Loading dog profile...
+        </Text>
+      </YStack>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity 
-          style={styles.backButton}
+    <YStack flex={1} backgroundColor="$background">
+      {/* Glassmorphism Header */}
+      <XStack
+        justifyContent="space-between"
+        alignItems="center"
+        paddingHorizontal="$6"
+        paddingVertical="$4"
+        paddingTop="$12"
+        backgroundColor="$backgroundStrong"
+        borderBottomLeftRadius="$glass"
+        borderBottomRightRadius="$glass"
+        borderBottomWidth={1}
+        borderBottomColor="$borderColor"
+        shadowColor="$shadowColor"
+        shadowOffset={{ width: 0, height: 4 }}
+        shadowOpacity={0.15}
+        shadowRadius={12}
+        elevation={8}
+      >
+        <Button
+          size="$4"
+          variant="outlined"
+          backgroundColor="transparent"
+          color="#3b82f6"
           onPress={() => router.back()}
+          icon={ArrowLeft}
         >
-          <Text style={styles.backButtonText}>← Back</Text>
-        </TouchableOpacity>
-        <Text style={styles.title} numberOfLines={1}>{dog.name}</Text>
-        <View style={styles.headerSpacer} />
-      </View>
+          Back
+        </Button>
+        <Text fontSize="$7" fontWeight="bold" color="$color12" numberOfLines={1} flex={1} textAlign="center">
+          {dog.name}
+        </Text>
+        <View width="$8" />
+      </XStack>
       
       <ScrollView 
-        style={styles.content} 
-        contentContainerStyle={styles.scrollContent}
+        flex={1}
+        padding="$4"
         showsVerticalScrollIndicator={false}
       >
         {/* Dog Header */}
-        <View style={styles.dogHeaderCard}>
-          <View style={styles.dogImagePlaceholder}>
-            <Text style={styles.dogInitial}>{dog.name.charAt(0)}</Text>
-          </View>
-          
-          <View style={styles.dogHeaderInfo}>
-            <Text style={styles.dogName}>{dog.name}</Text>
-            <View style={[styles.statusBadge, { backgroundColor: getStatusColor(dog.status) }]}>
-              <Text style={styles.statusText}>{dog.status}</Text>
-            </View>
+        <Card
+          backgroundColor="$backgroundStrong"
+          borderRadius="$glass"
+          borderWidth={1}
+          borderColor="$borderColor"
+          shadowColor="$shadowColor"
+          shadowOffset={{ width: 0, height: 4 }}
+          shadowOpacity={0.15}
+          shadowRadius={12}
+          elevation={8}
+          padding="$6"
+          marginBottom="$4"
+        >
+          <XStack gap="$4" alignItems="center">
+            <Avatar
+              size="$10"
+              backgroundColor="$blue5"
+              borderRadius="$round"
+            >
+              <Text fontSize="$8" fontWeight="bold" color="$blue11">
+                {dog.name.charAt(0)}
+              </Text>
+            </Avatar>
             
-            <View style={styles.dogBasicInfo}>
-              <Text style={styles.dogDetail}>
-                {dog.gender === 'male' ? '♂️' : '♀️'} {dog.gender}
-              </Text>
-              {dog.birth_date && (
-                <Text style={styles.dogDetail}>
-                  🎂 {calculateAge(dog.birth_date)}
+            <YStack flex={1} gap="$2">
+              <H3 color="$color12" numberOfLines={1}>{dog.name}</H3>
+              <View
+                backgroundColor={getStatusColor(dog.status)}
+                borderRadius="$4"
+                paddingHorizontal="$3"
+                paddingVertical="$1"
+                alignSelf="flex-start"
+              >
+                <Text fontSize="$3" fontWeight="600" color="white">
+                  {dog.status}
                 </Text>
-              )}
-              <Text style={styles.dogDetail}>
-                {dog.sterilized ? '✅ Sterilized' : '❌ Not sterilized'}
-              </Text>
-            </View>
-          </View>
-        </View>
+              </View>
+              
+              <YStack gap="$1">
+                <Text fontSize="$3" color="#6b7280">
+                  {dog.gender === 'male' ? '♂️' : '♀️'} {dog.gender}
+                </Text>
+                {dog.birth_date && (
+                  <Text fontSize="$3" color="#6b7280">
+                    🎂 {calculateAge(dog.birth_date)}
+                  </Text>
+                )}
+                <Text fontSize="$3" color="#6b7280">
+                  {dog.sterilized ? '✅ Sterilized' : '❌ Not sterilized'}
+                </Text>
+              </YStack>
+            </YStack>
+          </XStack>
+        </Card>
 
         {/* Location & People */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>📍 Location & People</Text>
+        <YStack gap="$3" marginBottom="$4">
+          <H4 color="$color12" fontSize="$5" fontWeight="600">
+            📍 Location & People
+          </H4>
           
-          <View style={styles.infoCard}>
+          <Card
+            backgroundColor="$backgroundStrong"
+            borderRadius="$glass"
+            borderWidth={1}
+            borderColor="$borderColor"
+            shadowColor="$shadowColor"
+            shadowOffset={{ width: 0, height: 2 }}
+            shadowOpacity={0.1}
+            shadowRadius={8}
+            elevation={4}
+            padding="$4"
+          >
             {dog.location_text && (
-              <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>Location:</Text>
-                <Text style={styles.infoValue}>{dog.location_text}</Text>
-              </View>
+              <XStack justifyContent="space-between" alignItems="center" paddingVertical="$2">
+                <Text fontSize="$4" fontWeight="500" color="#6b7280">Location:</Text>
+                <Text fontSize="$4" color="$color12" flex={1} textAlign="right">
+                  {dog.location_text}
+                </Text>
+              </XStack>
             )}
             
             {dog.rescue_date && (
-              <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>Rescue Date:</Text>
-                <Text style={styles.infoValue}>
+              <XStack justifyContent="space-between" alignItems="center" paddingVertical="$2">
+                <Text fontSize="$4" fontWeight="500" color="#6b7280">Rescue Date:</Text>
+                <Text fontSize="$4" color="$color12" flex={1} textAlign="right">
                   {new Date(dog.rescue_date).toLocaleDateString()}
                 </Text>
-              </View>
+              </XStack>
             )}
-          </View>
-        </View>
+          </Card>
+        </YStack>
 
         {/* Notes */}
         {dog.notes && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>📝 Notes</Text>
-            <View style={styles.notesCard}>
-              <Text style={styles.notesText}>{dog.notes}</Text>
-            </View>
-          </View>
+          <YStack gap="$3" marginBottom="$4">
+            <H4 color="$color12" fontSize="$5" fontWeight="600">
+              📝 Notes
+            </H4>
+            <Card
+              backgroundColor="$backgroundStrong"
+              borderRadius="$glass"
+              borderWidth={1}
+              borderColor="$borderColor"
+              shadowColor="$shadowColor"
+              shadowOffset={{ width: 0, height: 2 }}
+              shadowOpacity={0.1}
+              shadowRadius={8}
+              elevation={4}
+              padding="$4"
+            >
+              <Paragraph fontSize="$4" color="#6b7280" lineHeight="$5">
+                {dog.notes}
+              </Paragraph>
+            </Card>
+          </YStack>
         )}
 
         {/* Tags */}
         {dog.tags.length > 0 && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>🏷️ Tags</Text>
-            <View style={styles.tagsContainer}>
+          <YStack gap="$3" marginBottom="$4">
+            <H4 color="$color12" fontSize="$5" fontWeight="600">
+              🏷️ Tags
+            </H4>
+            <XStack flexWrap="wrap" gap="$2">
               {dog.tags.map((tag, index) => (
-                <View key={index} style={styles.tag}>
-                  <Text style={styles.tagText}>{tag}</Text>
+                <View
+                  key={index}
+                  backgroundColor="$blue5"
+                  borderRadius="$4"
+                  paddingHorizontal="$3"
+                  paddingVertical="$2"
+                  borderWidth={1}
+                  borderColor="$blue7"
+                >
+                  <Text fontSize="$3" fontWeight="500" color="$blue11">
+                    {tag}
+                  </Text>
                 </View>
               ))}
-            </View>
-          </View>
+            </XStack>
+          </YStack>
         )}
 
         {/* Timeline */}
-        <View style={styles.section}>
-          <View style={styles.timelineHeader}>
-            <Text style={styles.sectionTitle}>📅 Timeline</Text>
+        <YStack gap="$3" marginBottom="$4">
+          <XStack justifyContent="space-between" alignItems="center">
+            <H4 color="$color12" fontSize="$5" fontWeight="600">
+              📅 Timeline
+            </H4>
             {canAddEvent && (
-              <TouchableOpacity 
-                style={styles.addEventButton}
+              <Button
+                size="$3"
+                backgroundColor="$blue9"
+                color="white"
+                borderRadius="$4"
+                fontWeight="600"
                 onPress={() => setModalVisible(true)}
+                icon={Plus}
+                scaleIcon={1.2}
               >
-                <Text style={styles.addEventButtonText}>+ Add Event</Text>
-              </TouchableOpacity>
+                Add Event
+              </Button>
             )}
-          </View>
+          </XStack>
           
           {events.length > 0 ? (
-            <View style={styles.timelineContainer}>
+            <YStack gap="$3">
               {events.map((event, index) => (
-                <View key={event.id} style={styles.eventCard}>
-                  <View style={styles.eventHeader}>
-                    <View style={styles.eventTypeContainer}>
-                      <Text style={styles.eventIcon}>
+                <Card
+                  key={event.id}
+                  backgroundColor="$backgroundStrong"
+                  borderRadius="$glass"
+                  borderWidth={1}
+                  borderColor="$borderColor"
+                  shadowColor="$shadowColor"
+                  shadowOffset={{ width: 0, height: 2 }}
+                  shadowOpacity={0.1}
+                  shadowRadius={8}
+                  elevation={4}
+                  padding="$4"
+                >
+                  <XStack justifyContent="space-between" alignItems="center" marginBottom="$3">
+                    <XStack gap="$2" alignItems="center">
+                      <Text fontSize="$4">
                         {getEventTypeIcon(event.event_type)}
                       </Text>
-                      <Text style={styles.eventType}>{event.event_type}</Text>
-                    </View>
-                    <Text style={styles.eventDate}>
+                      <Text fontSize="$4" fontWeight="600" color="$color12" textTransform="capitalize">
+                        {event.event_type}
+                      </Text>
+                    </XStack>
+                    <Text fontSize="$3" color="$color10">
                       {formatDate(event.created_at)}
                     </Text>
-                  </View>
+                  </XStack>
                   
-                  <Text style={styles.eventTitle}>{event.title}</Text>
+                  <Text fontSize="$5" fontWeight="600" color="$color12" marginBottom="$2">
+                    {event.title}
+                  </Text>
                   
                   {event.description && (
-                    <Text style={styles.eventDescription}>{event.description}</Text>
+                    <Paragraph fontSize="$4" color="#6b7280" lineHeight="$5" marginBottom="$3">
+                      {event.description}
+                    </Paragraph>
                   )}
                   
-                  <View style={styles.eventMeta}>
-                    <Text style={styles.eventPrivacy}>
+                  <XStack justifyContent="flex-end">
+                    <Text fontSize="$3" color="$color10">
                       {event.privacy_level === 'public' ? '🌐' : 
                        event.privacy_level === 'private' ? '🔒' : '🔐'} 
                       {event.privacy_level}
                     </Text>
-                  </View>
-                </View>
+                  </XStack>
+                </Card>
               ))}
-            </View>
+            </YStack>
           ) : (
-            <View style={styles.emptyTimeline}>
-              <Text style={styles.emptyTimelineText}>No events yet</Text>
-              <Text style={styles.emptyTimelineSubtext}>
+            <Card
+              backgroundColor="$backgroundStrong"
+              borderRadius="$glass"
+              borderWidth={1}
+              borderColor="$borderColor"
+              shadowColor="$shadowColor"
+              shadowOffset={{ width: 0, height: 2 }}
+              shadowOpacity={0.1}
+              shadowRadius={8}
+              elevation={4}
+              padding="$6"
+              alignItems="center"
+            >
+              <Text fontSize="$5" fontWeight="600" color="#6b7280" marginBottom="$2">
+                No events yet
+              </Text>
+              <Text fontSize="$4" color="$color10" textAlign="center">
                 {canAddEvent ? 'Add the first event for this dog!' : 'Check back later for updates'}
               </Text>
-            </View>
+            </Card>
           )}
-        </View>
+        </YStack>
       </ScrollView>
 
       <TimelineEventModal
@@ -275,286 +422,6 @@ export default function DogProfileScreen() {
           fetchDogEvents();
         }}
       />
-    </SafeAreaView>
+    </YStack>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f8fafc',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    paddingTop: 60,
-    backgroundColor: '#fff',
-    borderBottomLeftRadius: 24,
-    borderBottomRightRadius: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 5,
-  },
-  backButton: {
-    marginRight: 16,
-  },
-  backButtonText: {
-    fontSize: 16,
-    color: '#3b82f6',
-    fontWeight: '600',
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#1e293b',
-    flex: 1,
-    textAlign: 'center',
-  },
-  headerSpacer: {
-    width: 60,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loadingText: {
-    fontSize: 16,
-    color: '#64748b',
-  },
-  content: {
-    flex: 1,
-    padding: 20,
-  },
-  scrollContent: {
-    paddingBottom: 100, // Space for tab bar
-  },
-  dogHeaderCard: {
-    backgroundColor: '#fff',
-    borderRadius: 20,
-    padding: 24,
-    marginBottom: 20,
-    flexDirection: 'row',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 5,
-  },
-  dogImagePlaceholder: {
-    width: 100,
-    height: 100,
-    backgroundColor: '#e0e7ff',
-    borderRadius: 50,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 20,
-  },
-  dogInitial: {
-    fontSize: 40,
-    fontWeight: 'bold',
-    color: '#3b82f6',
-  },
-  dogHeaderInfo: {
-    flex: 1,
-    justifyContent: 'center',
-  },
-  dogName: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#1e293b',
-    marginBottom: 8,
-  },
-  statusBadge: {
-    alignSelf: 'flex-start',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    marginBottom: 12,
-  },
-  statusText: {
-    color: '#fff',
-    fontSize: 12,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-  },
-  dogBasicInfo: {
-    gap: 4,
-  },
-  dogDetail: {
-    fontSize: 16,
-    color: '#64748b',
-    fontWeight: '500',
-  },
-  section: {
-    marginBottom: 24,
-  },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#1e293b',
-    marginBottom: 12,
-  },
-  infoCard: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  infoRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f1f5f9',
-  },
-  infoLabel: {
-    fontSize: 16,
-    color: '#64748b',
-    fontWeight: '500',
-  },
-  infoValue: {
-    fontSize: 16,
-    color: '#1e293b',
-    fontWeight: '600',
-  },
-  notesCard: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  notesText: {
-    fontSize: 16,
-    color: '#64748b',
-    lineHeight: 24,
-  },
-  tagsContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  tag: {
-    backgroundColor: '#f1f5f9',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#e2e8f0',
-  },
-  tagText: {
-    fontSize: 14,
-    color: '#475569',
-    fontWeight: '600',
-  },
-  timelineHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  addEventButton: {
-    backgroundColor: '#3b82f6',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-  },
-  addEventButtonText: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  timelineContainer: {
-    gap: 12,
-  },
-  eventCard: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  eventHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  eventTypeContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  eventIcon: {
-    fontSize: 16,
-  },
-  eventType: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#3b82f6',
-    textTransform: 'capitalize',
-  },
-  eventDate: {
-    fontSize: 12,
-    color: '#94a3b8',
-  },
-  eventTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#1e293b',
-    marginBottom: 4,
-  },
-  eventDescription: {
-    fontSize: 14,
-    color: '#64748b',
-    lineHeight: 20,
-    marginBottom: 8,
-  },
-  eventMeta: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-  },
-  eventPrivacy: {
-    fontSize: 12,
-    color: '#94a3b8',
-    textTransform: 'capitalize',
-  },
-  emptyTimeline: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 40,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  emptyTimelineText: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#64748b',
-    marginBottom: 8,
-  },
-  emptyTimelineSubtext: {
-    fontSize: 14,
-    color: '#94a3b8',
-    textAlign: 'center',
-  },
-});

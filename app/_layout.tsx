@@ -2,7 +2,7 @@ import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
-import { TamaguiProvider } from 'tamagui';
+import { TamaguiProvider, PortalProvider } from 'tamagui';
 
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { AuthProvider } from '../contexts/AuthContext';
@@ -15,6 +15,7 @@ function AppContent() {
     <AuthProvider>
       <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
         <Stack screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="location-selection" />
           <Stack.Screen name="(auth)" />
           <Stack.Screen name="(tabs)" />
           <Stack.Screen name="+not-found" />
@@ -30,7 +31,9 @@ export default function RootLayout() {
 
   return (
     <TamaguiProvider config={tamaguiConfig} defaultTheme={colorScheme || 'light'}>
-      <AppContent />
+      <PortalProvider>
+        <AppContent />
+      </PortalProvider>
     </TamaguiProvider>
   );
 }
