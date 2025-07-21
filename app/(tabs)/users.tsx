@@ -14,8 +14,10 @@ import {
   YStack,
 } from 'tamagui';
 import { useAuth } from '../../contexts/AuthContext';
+import { useLoading } from '../../contexts/LoadingContext';
 import { Database } from '../../lib/database.types';
 import { supabase } from '../../lib/supabase';
+import { UserListSkeleton } from '../../components/Skeletons';
 
 type User = Database['public']['Tables']['users']['Row'];
 
@@ -308,11 +310,35 @@ export default function UsersScreen() {
 
   if (loading) {
     return (
-      <YStack flex={1} justifyContent="center" alignItems="center" backgroundColor="$background">
-        <Spinner size="large" color="#3b82f6" />
-        <Text fontSize="$4" color="#6b7280" marginTop="$4">
-          Loading users...
-        </Text>
+      <YStack flex={1} backgroundColor="$background">
+        {/* Header */}
+        <YStack
+          paddingHorizontal="$6"
+          paddingVertical="$4"
+          paddingTop="$12"
+          backgroundColor="$backgroundStrong"
+          borderBottomLeftRadius="$glass"
+          borderBottomRightRadius="$glass"
+          borderBottomWidth={1}
+          borderBottomColor="$borderColor"
+          shadowColor="$shadowColor"
+          shadowOffset={{ width: 0, height: 4 }}
+          shadowOpacity={0.15}
+          shadowRadius={12}
+          elevation={8}
+          gap="$4"
+        >
+          <YStack alignItems="center" marginBottom="$3">
+            <Text fontSize="$8" fontWeight="bold" color="$gray12" textAlign="center">
+              Team Members
+            </Text>
+            <Text fontSize="$4" color="#6b7280" textAlign="center">
+              Loading users...
+            </Text>
+          </YStack>
+        </YStack>
+        
+        <UserListSkeleton />
       </YStack>
     );
   }

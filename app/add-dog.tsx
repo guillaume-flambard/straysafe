@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Alert, Platform } from 'react-native';
+import { Alert, Platform, Keyboard, KeyboardAvoidingView } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import {
   YStack,
   XStack,
@@ -14,6 +15,7 @@ import {
   Avatar
 } from 'tamagui';
 import { useAuth } from '../contexts/AuthContext';
+import { useLoading } from '../contexts/LoadingContext';
 import { supabase } from '../lib/supabase';
 import { router } from 'expo-router';
 import { ArrowLeft, Camera, Calendar, MapPin, Plus, Tag, User } from 'lucide-react-native';
@@ -32,12 +34,29 @@ export default function AddDogScreen() {
   const [tags, setTags] = useState<string[]>([]);
   const [newTag, setNewTag] = useState('');
   const [photoUri, setPhotoUri] = useState<string | null>(null);
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
+  const [showBirthDatePicker, setShowBirthDatePicker] = useState(false);
+  const [showRescueDatePicker, setShowRescueDatePicker] = useState(false);
+  const [birthDateObj, setBirthDateObj] = useState<Date | null>(null);
+  const [rescueDateObj, setRescueDateObj] = useState<Date | null>(null);
   const { userProfile } = useAuth();
+  const { setLoading: setGlobalLoading } = useLoading();
 
   useEffect(() => {
-    // Set rescue date to today by default
-    const today = new Date().toISOString().split('T')[0];
-    setRescueDate(today);
+    // Don't set rescue date automatically - let user choose
+
+    // Setup keyboard listeners
+    const keyboardShowListener = Keyboard.addListener('keyboardDidShow', () => {
+      setKeyboardVisible(true);
+    });
+    const keyboardHideListener = Keyboard.addListener('keyboardDidHide', () => {
+      setKeyboardVisible(false);
+    });
+
+    return () => {
+      keyboardShowListener?.remove();
+      keyboardHideListener?.remove();
+    };
   }, []);
 
   const predefinedTags = [
@@ -107,35 +126,56 @@ export default function AddDogScreen() {
     setTags(tags.filter(tag => tag !== tagToRemove));
   };
 
+  const handleBirthDateChange = (event: any, selectedDate?: Date) => {
+    setShowBirthDatePicker(false);
+    if (selectedDate) {
+      setBirthDateObj(selectedDate);
+      setBirthDate(selectedDate.toISOString().split('T')[0]);
+    }
+  };
+
+  const handleRescueDateChange = (event: any, selectedDate?: Date) => {
+    setShowRescueDatePicker(false);
+    if (selectedDate) {
+      setRescueDateObj(selectedDate);
+      setRescueDate(selectedDate.toISOString().split('T')[0]);
+    }
+  };
+
   const uploadPhoto = async (uri: string): Promise<string | null> => {
     try {
-      const formData = new FormData();
       const filename = `dog_${Date.now()}.jpg`;
       
-      formData.append('file', {
+      // For React Native, we need to use the file URI directly
+      const file = {
         uri,
         type: 'image/jpeg',
         name: filename,
-      } as any);
+      };
 
       const { data, error } = await supabase.storage
-        .from('dog-photos')
-        .upload(filename, formData, {
-          contentType: 'image/jpeg'
+        .from('dogs-photos')
+        .upload(filename, file as any, {
+          contentType: 'image/jpeg',
+          upsert: false
         });
 
       if (error) {
         console.error('Upload error:', error);
+        // Don't fail the whole process if photo upload fails
+        Alert.alert('Photo Upload Warning', 'The dog was added but the photo could not be uploaded. You can add a photo later.');
         return null;
       }
 
       const { data: { publicUrl } } = supabase.storage
-        .from('dog-photos')
+        .from('dogs-photos')
         .getPublicUrl(filename);
 
+      console.log('Generated photo URL:', publicUrl);
       return publicUrl;
     } catch (error) {
       console.error('Error uploading photo:', error);
+      Alert.alert('Photo Upload Warning', 'The dog was added but the photo could not be uploaded. You can add a photo later.');
       return null;
     }
   };
@@ -152,6 +192,7 @@ export default function AddDogScreen() {
     }
 
     setLoading(true);
+    setGlobalLoading(true, 'Adding dog...');
 
     try {
       let photoUrl: string | null = null;
@@ -182,7 +223,9 @@ export default function AddDogScreen() {
 
       if (error) {
         console.error('Error adding dog:', error);
-        Alert.alert('Error', 'Failed to add dog: ' + error.message);
+        console.error('User profile:', userProfile);
+        console.error('Dog data being inserted:', dogData);
+        Alert.alert('Error', `Failed to add dog: ${error.message}\n\nUser ID: ${userProfile?.id}\nLocation ID: ${userProfile?.location_id}\nRole: ${userProfile?.role}`);
       } else {
         Alert.alert(
           'Success!', 
@@ -198,6 +241,7 @@ export default function AddDogScreen() {
     }
 
     setLoading(false);
+    setGlobalLoading(false);
   };
 
   const getTagColor = (tag: string) => {
@@ -214,7 +258,11 @@ export default function AddDogScreen() {
   };
 
   return (
-    <YStack flex={1} backgroundColor="$background">
+    <KeyboardAvoidingView 
+      style={{ flex: 1 }} 
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    >
+      <YStack flex={1} backgroundColor="$background">
       {/* Header */}
       <YStack
         paddingHorizontal="$6"
@@ -474,17 +522,37 @@ export default function AddDogScreen() {
               <Text fontSize="$3" color="#6b7280" fontWeight="600">
                 Birth Date (optional)
               </Text>
-              <Input
+              <Button
                 size="$4"
-                placeholder="YYYY-MM-DD"
-                value={birthDate}
-                onChangeText={setBirthDate}
+                variant="outlined"
                 backgroundColor="rgba(255, 255, 255, 0.9)"
                 borderColor="rgba(203, 213, 225, 0.6)"
+                color="#6b7280"
                 borderRadius={8}
-                fontSize="$3"
+                justifyContent="flex-start"
                 paddingHorizontal="$3"
-              />
+                onPress={() => {
+                  if (!birthDateObj) {
+                    setBirthDateObj(new Date());
+                  }
+                  setShowBirthDatePicker(true);
+                }}
+              >
+                <XStack alignItems="center" gap="$2">
+                  <Calendar size={16} color="#6b7280" />
+                  <Text fontSize="$3" color="#6b7280">
+                    {birthDate || 'Select birth date'}
+                  </Text>
+                </XStack>
+              </Button>
+              {showBirthDatePicker && birthDateObj && (
+                <DateTimePicker
+                  value={birthDateObj}
+                  mode="date"
+                  display="default"
+                  onChange={handleBirthDateChange}
+                />
+              )}
             </YStack>
 
             {/* Rescue Date */}
@@ -492,17 +560,37 @@ export default function AddDogScreen() {
               <Text fontSize="$3" color="#6b7280" fontWeight="600">
                 Rescue Date
               </Text>
-              <Input
+              <Button
                 size="$4"
-                placeholder="YYYY-MM-DD"
-                value={rescueDate}
-                onChangeText={setRescueDate}
+                variant="outlined"
                 backgroundColor="rgba(255, 255, 255, 0.9)"
                 borderColor="rgba(203, 213, 225, 0.6)"
+                color="#6b7280"
                 borderRadius={8}
-                fontSize="$3"
+                justifyContent="flex-start"
                 paddingHorizontal="$3"
-              />
+                onPress={() => {
+                  if (!rescueDateObj) {
+                    setRescueDateObj(new Date());
+                  }
+                  setShowRescueDatePicker(true);
+                }}
+              >
+                <XStack alignItems="center" gap="$2">
+                  <Calendar size={16} color="#6b7280" />
+                  <Text fontSize="$3" color="#6b7280">
+                    {rescueDate || 'Select rescue date'}
+                  </Text>
+                </XStack>
+              </Button>
+              {showRescueDatePicker && rescueDateObj && (
+                <DateTimePicker
+                  value={rescueDateObj}
+                  mode="date"
+                  display="default"
+                  onChange={handleRescueDateChange}
+                />
+              )}
             </YStack>
           </YStack>
         </Card>
@@ -719,7 +807,6 @@ export default function AddDogScreen() {
               paddingHorizontal="$3"
               multiline
               numberOfLines={4}
-              textAlignVertical="top"
             />
           </YStack>
         </Card>
@@ -746,5 +833,6 @@ export default function AddDogScreen() {
         </Button>
       </ScrollView>
     </YStack>
+    </KeyboardAvoidingView>
   );
 }

@@ -1,8 +1,8 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { AlertTriangle, Filter, Grid, List, Plus, Search } from 'lucide-react-native';
-import React, { useEffect, useState } from 'react';
-import { Alert, Modal } from 'react-native';
+import React, { useCallback, useEffect, useState } from 'react';
+import { Alert, Modal, Image } from 'react-native';
 import {
   Avatar,
   Button,
@@ -18,6 +18,7 @@ import {
 import { useAuth } from '../../contexts/AuthContext';
 import { Database } from '../../lib/database.types';
 import { supabase } from '../../lib/supabase';
+import { DogListSkeleton, DogGridSkeleton } from '../../components/Skeletons';
 
 type Dog = Database['public']['Tables']['dogs']['Row'];
 
@@ -35,10 +36,16 @@ export default function DogsScreen() {
 
   useEffect(() => {
     loadSelectedZone();
-    if (userProfile) {
-      fetchDogs();
-    }
-  }, [userProfile]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Refresh dogs when screen comes into focus (e.g., after adding a new dog)
+  useFocusEffect(
+    useCallback(() => {
+      if (userProfile) {
+        fetchDogs();
+      }
+    }, [userProfile])
+  );
 
   useEffect(() => {
     applyFilters();
@@ -202,6 +209,14 @@ export default function DogsScreen() {
   const renderDogCard = (item: Dog) => {
     const isGridMode = viewMode === 'grid';
     
+    // Debug: Log the photo URL for each dog
+    if (item.photo_url) {
+      console.log(`Dog ${item.name} photo URL:`, item.photo_url);
+    }
+    
+    // Choose image source - prioritize uploaded photo
+    const imageSource = item.photo_url ? { uri: item.photo_url } : { uri: getDogImageUrl(item.id) };
+    
     return (
       <Card
         key={item.id}
@@ -237,14 +252,20 @@ export default function DogsScreen() {
                 overflow="hidden"
                 backgroundColor="#f3f4f6"
               >
-                <Avatar size="$10" width="100%" height="100%" borderRadius={8}>
-                  <Avatar.Image src={item.photo_url || getDogImageUrl(item.id)} style={{ width: '100%', height: '100%' }} />
-                  <Avatar.Fallback backgroundColor="$blue4" justifyContent="center" alignItems="center">
-                    <Text fontSize="$8" fontWeight="bold" color="#3b82f6">
-                      {item.name.charAt(0)}
-                    </Text>
-                  </Avatar.Fallback>
-                </Avatar>
+                <Image 
+                  source={imageSource}
+                  style={{ 
+                    width: '100%', 
+                    height: '100%', 
+                    borderRadius: 8 
+                  }}
+                  onError={(error) => {
+                    console.log(`Failed to load image for ${item.name}:`, item.photo_url, error.nativeEvent.error);
+                  }}
+                  onLoad={() => {
+                    console.log(`Successfully loaded image for ${item.name}`);
+                  }}
+                />
               </View>
               
               {/* Status badge */}
@@ -343,14 +364,27 @@ export default function DogsScreen() {
           <XStack alignItems="center" gap="$3">
             {/* Photo */}
             <View position="relative">
-              <Avatar circular size="$7">
-                <Avatar.Image src={item.photo_url || getDogImageUrl(item.id)} />
-                <Avatar.Fallback backgroundColor="$blue4">
-                  <Text fontSize="$6" fontWeight="bold" color="#3b82f6">
-                    {item.name.charAt(0)}
-                  </Text>
-                </Avatar.Fallback>
-              </Avatar>
+              <View 
+                width={60} 
+                height={60} 
+                borderRadius={30} 
+                overflow="hidden"
+                backgroundColor="#f3f4f6"
+              >
+                <Image 
+                  source={imageSource}
+                  style={{ 
+                    width: '100%', 
+                    height: '100%'
+                  }}
+                  onError={(error) => {
+                    console.log(`Failed to load image for ${item.name}:`, item.photo_url, error.nativeEvent.error);
+                  }}
+                  onLoad={() => {
+                    console.log(`Successfully loaded image for ${item.name}`);
+                  }}
+                />
+              </View>
               
               {/* Priority indicator */}
               {item.tags.includes('urgent') && (
@@ -456,11 +490,36 @@ export default function DogsScreen() {
 
   if (loading) {
     return (
-      <YStack flex={1} justifyContent="center" alignItems="center" backgroundColor="$background">
-        <Spinner size="large" color="#3b82f6" />
-        <Text fontSize="$4" color="#6b7280" marginTop="$4">
-          Loading dogs...
-        </Text>
+      <YStack flex={1} backgroundColor="$background">
+        {/* Header */}
+        <YStack
+          paddingHorizontal="$6"
+          paddingVertical="$4"
+          paddingTop="$12"
+          backgroundColor="$backgroundStrong"
+          borderBottomLeftRadius="$glass"
+          borderBottomRightRadius="$glass"
+          borderBottomWidth={1}
+          borderBottomColor="$borderColor"
+          shadowColor="$shadowColor"
+          shadowOffset={{ width: 0, height: 4 }}
+          shadowOpacity={0.15}
+          shadowRadius={12}
+          elevation={8}
+          gap="$4"
+        >
+          <YStack alignItems="center" marginBottom="$3">
+            <Text fontSize="$8" fontWeight="bold" color="$gray12" textAlign="center">
+              Dogs in {selectedZone ? getZoneDisplayName(selectedZone) : 'Unknown Location'}
+            </Text>
+            <Text fontSize="$4" color="#6b7280" textAlign="center">
+              Loading dogs...
+            </Text>
+          </YStack>
+        </YStack>
+        
+        {/* Skeleton based on view mode */}
+        {viewMode === 'grid' ? <DogGridSkeleton /> : <DogListSkeleton />}
       </YStack>
     );
   }
