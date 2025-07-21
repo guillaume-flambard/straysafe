@@ -5,12 +5,13 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="34d5b9d9-5911-40c1-80ff-5c4bff506422" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/app.json" beforeDir="false" afterPath="$PROJECT_DIR$/app.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/(auth)/login.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(auth)/login.tsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/(auth)/signup.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(auth)/signup.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/(tabs)/calendar.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(tabs)/calendar.tsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/(tabs)/index.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(tabs)/index.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/(tabs)/settings.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(tabs)/settings.tsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/(tabs)/users.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(tabs)/users.tsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/index.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/index.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/location-selection.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/location-selection.tsx" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -65,7 +66,7 @@
       <updated>1752997797111</updated>
       <workItem from="1752997800616" duration="757000" />
       <workItem from="1753069881944" duration="788000" />
-      <workItem from="1753074683429" duration="959000" />
+      <workItem from="1753074683429" duration="3123000" />
     </task>
     <servers />
   </component>

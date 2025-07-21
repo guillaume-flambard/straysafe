@@ -173,6 +173,32 @@ export default function DogsScreen() {
     }
   };
 
+  const getDogImageUrl = (dogId: string, size: number = 200) => {
+    // Use a consistent seed based on dog ID for consistent images
+    const dogImages = [
+      'https://images.unsplash.com/photo-1552053831-71594a27632d?w=400&h=400&fit=crop&crop=face',
+      'https://images.unsplash.com/photo-1583337130417-3346a1be7dee?w=400&h=400&fit=crop&crop=face',
+      'https://images.unsplash.com/photo-1518717758536-85ae29035b6d?w=400&h=400&fit=crop&crop=face',
+      'https://images.unsplash.com/photo-1561037404-61cd46aa615b?w=400&h=400&fit=crop&crop=face',
+      'https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=400&h=400&fit=crop&crop=face',
+      'https://images.unsplash.com/photo-1558788353-f76d92427f16?w=400&h=400&fit=crop&crop=face',
+      'https://images.unsplash.com/photo-1552053831-71594a27632d?w=400&h=400&fit=crop&crop=face',
+      'https://images.unsplash.com/photo-1601758228041-f3b2795255f1?w=400&h=400&fit=crop&crop=face',
+      'https://images.unsplash.com/photo-1537151625747-768eb6cf92b2?w=400&h=400&fit=crop&crop=face',
+      'https://images.unsplash.com/photo-1517849845537-4d257902454a?w=400&h=400&fit=crop&crop=face'
+    ];
+    
+    // Use hash of dogId to get consistent image for same dog
+    let hash = 0;
+    for (let i = 0; i < dogId.length; i++) {
+      const char = dogId.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash; // Convert to 32bit integer
+    }
+    const index = Math.abs(hash) % dogImages.length;
+    return dogImages[index];
+  };
+
   const renderDogCard = (item: Dog) => {
     const isGridMode = viewMode === 'grid';
     
@@ -190,7 +216,6 @@ export default function DogsScreen() {
         backgroundColor="rgba(255, 255, 255, 0.95)"
         borderColor="rgba(203, 213, 225, 0.6)"
         marginBottom="$3"
-        marginRight={isGridMode ? "$3" : undefined}
         padding="$4"
         borderRadius={12}
         shadowColor="rgba(0, 0, 0, 0.1)"
@@ -205,37 +230,22 @@ export default function DogsScreen() {
           <YStack gap="$3">
             {/* Photo */}
             <View position="relative">
-              {item.photo_url ? (
-                <View
-                  width="100%"
-                  height={120}
-                  borderRadius={8}
-                  overflow="hidden"
-                  backgroundColor="#f3f4f6"
-                >
-                  <Avatar size="$10" width="100%" height="100%" borderRadius={8}>
-                    <Avatar.Image src={item.photo_url} style={{ width: '100%', height: '100%' }} />
-                    <Avatar.Fallback backgroundColor="$blue4" justifyContent="center" alignItems="center">
-                      <Text fontSize="$8" fontWeight="bold" color="#3b82f6">
-                        {item.name.charAt(0)}
-                      </Text>
-                    </Avatar.Fallback>
-                  </Avatar>
-                </View>
-              ) : (
-                <View
-                  width="100%"
-                  height={120}
-                  borderRadius={8}
-                  backgroundColor="$blue4"
-                  justifyContent="center"
-                  alignItems="center"
-                >
-                  <Text fontSize="$8" fontWeight="bold" color="#3b82f6">
-                    {item.name.charAt(0)}
-                  </Text>
-                </View>
-              )}
+              <View
+                width="100%"
+                height={120}
+                borderRadius={8}
+                overflow="hidden"
+                backgroundColor="#f3f4f6"
+              >
+                <Avatar size="$10" width="100%" height="100%" borderRadius={8}>
+                  <Avatar.Image src={item.photo_url || getDogImageUrl(item.id)} style={{ width: '100%', height: '100%' }} />
+                  <Avatar.Fallback backgroundColor="$blue4" justifyContent="center" alignItems="center">
+                    <Text fontSize="$8" fontWeight="bold" color="#3b82f6">
+                      {item.name.charAt(0)}
+                    </Text>
+                  </Avatar.Fallback>
+                </Avatar>
+              </View>
               
               {/* Status badge */}
               <View
@@ -333,22 +343,14 @@ export default function DogsScreen() {
           <XStack alignItems="center" gap="$3">
             {/* Photo */}
             <View position="relative">
-              {item.photo_url ? (
-                <Avatar circular size="$7">
-                  <Avatar.Image src={item.photo_url} />
-                  <Avatar.Fallback backgroundColor="$blue4">
-                    <Text fontSize="$6" fontWeight="bold" color="#3b82f6">
-                      {item.name.charAt(0)}
-                    </Text>
-                  </Avatar.Fallback>
-                </Avatar>
-              ) : (
-                <Avatar circular size="$7" backgroundColor="$blue4">
+              <Avatar circular size="$7">
+                <Avatar.Image src={item.photo_url || getDogImageUrl(item.id)} />
+                <Avatar.Fallback backgroundColor="$blue4">
                   <Text fontSize="$6" fontWeight="bold" color="#3b82f6">
                     {item.name.charAt(0)}
                   </Text>
-                </Avatar>
-              )}
+                </Avatar.Fallback>
+              </Avatar>
               
               {/* Priority indicator */}
               {item.tags.includes('urgent') && (
@@ -482,60 +484,72 @@ export default function DogsScreen() {
         elevation={8}
         gap="$4"
       >
-        {/* Title and Location */}
+        {/* Title */}
+        <YStack alignItems="center" marginBottom="$3">
+          <Text fontSize="$8" fontWeight="bold" color="$gray12" textAlign="center">
+            Dogs in {selectedZone ? getZoneDisplayName(selectedZone) : 'Unknown Location'}
+          </Text>
+          <Text fontSize="$4" color="#6b7280" textAlign="center">
+            {filteredDogs.length} {filteredDogs.length === 1 ? 'dog' : 'dogs'} found
+          </Text>
+        </YStack>
+        
+        {/* Controls Row */}
         <XStack justifyContent="space-between" alignItems="center">
-          <YStack flex={1}>
-            <Text fontSize="$8" fontWeight="bold" color="$gray12">
-              Dogs in {selectedZone ? getZoneDisplayName(selectedZone) : 'Unknown Location'}
-            </Text>
-            <Text fontSize="$4" color="#6b7280">
-              {filteredDogs.length} {filteredDogs.length === 1 ? 'dog' : 'dogs'} found
-            </Text>
-          </YStack>
-          
-          <XStack gap="$2" alignItems="center">
-            {/* View toggle */}
-            <XStack backgroundColor="rgba(255, 255, 255, 0.9)" borderRadius={8} padding="$1" gap="$1">
-              <Button
-                size="$3"
-                backgroundColor={viewMode === 'list' ? "#3b82f6" : "transparent"}
-                color={viewMode === 'list' ? "white" : "#6b7280"}
-                borderRadius={6}
-                onPress={() => setViewMode('list')}
-                icon={List}
-                scaleIcon={0.9}
-              />
-              <Button
-                size="$3"
-                backgroundColor={viewMode === 'grid' ? "#3b82f6" : "transparent"}
-                color={viewMode === 'grid' ? "white" : "#6b7280"}
-                borderRadius={6}
-                onPress={() => setViewMode('grid')}
-                icon={Grid}
-                scaleIcon={0.9}
-              />
-            </XStack>
-            
+          {/* View toggle */}
+          <XStack backgroundColor="rgba(255, 255, 255, 0.9)" borderRadius={8} padding="$1" gap="$1">
             <Button
-              icon={Plus}
-              size="$4"
-              variant="outlined"
-              backgroundColor="#3b82f6"
-              borderColor="#3b82f6"
-              color="white"
-              borderRadius="$button"
-              onPress={() => Alert.alert('Add Dog', 'Feature coming soon!')}
-              hoverStyle={{ backgroundColor: '$blue11' }}
-              pressStyle={{ backgroundColor: '$blue9' }}
-            >
-              Add Dog
-            </Button>
+              size="$3"
+              backgroundColor={viewMode === 'list' ? "#3b82f6" : "transparent"}
+              color={viewMode === 'list' ? "white" : "#6b7280"}
+              borderRadius={6}
+              onPress={() => setViewMode('list')}
+              icon={List}
+              scaleIcon={0.9}
+            />
+            <Button
+              size="$3"
+              backgroundColor={viewMode === 'grid' ? "#3b82f6" : "transparent"}
+              color={viewMode === 'grid' ? "white" : "#6b7280"}
+              borderRadius={6}
+              onPress={() => setViewMode('grid')}
+              icon={Grid}
+              scaleIcon={0.9}
+            />
           </XStack>
+          
+          <Button
+            icon={Plus}
+            size="$4"
+            variant="outlined"
+            backgroundColor="#3b82f6"
+            borderColor="#3b82f6"
+            color="white"
+            borderRadius="$button"
+            onPress={() => Alert.alert('Add Dog', 'Feature coming soon!')}
+            hoverStyle={{ backgroundColor: '$blue11' }}
+            pressStyle={{ backgroundColor: '$blue9' }}
+          >
+            Add Dog
+          </Button>
         </XStack>
 
         {/* Search and Filter */}
         <XStack gap="$3" alignItems="center">
-          <XStack flex={1} alignItems="center" backgroundColor="$backgroundHover" borderColor="$borderColor" borderRadius="$button" borderWidth={1} paddingHorizontal="$3">
+          <XStack 
+            flex={1} 
+            alignItems="center" 
+            backgroundColor="rgba(255, 255, 255, 0.9)" 
+            borderColor="rgba(203, 213, 225, 0.6)" 
+            borderRadius={12} 
+            borderWidth={1} 
+            paddingHorizontal="$3"
+            shadowColor="rgba(0, 0, 0, 0.1)"
+            shadowOffset={{ width: 0, height: 2 }}
+            shadowOpacity={0.1}
+            shadowRadius={4}
+            elevation={2}
+          >
             <Search size={16} color="#6b7280" />
             <Input
               flex={1}
@@ -552,15 +566,18 @@ export default function DogsScreen() {
           <Button
             size="$4"
             variant="outlined"
-            backgroundColor="$backgroundHover"
-            borderColor="$borderColor"
+            backgroundColor="rgba(255, 255, 255, 0.9)"
+            borderColor="rgba(203, 213, 225, 0.6)"
             color="#6b7280"
-            borderRadius="$button"
+            borderRadius={12}
             onPress={() => setFilterOpen(true)}
             icon={Filter}
-          >
-            Filter
-          </Button>
+            shadowColor="rgba(0, 0, 0, 0.1)"
+            shadowOffset={{ width: 0, height: 2 }}
+            shadowOpacity={0.1}
+            shadowRadius={4}
+            elevation={2}
+          />
         </XStack>
       </YStack>
       
@@ -571,7 +588,7 @@ export default function DogsScreen() {
       >
         {filteredDogs.length > 0 ? (
           viewMode === 'grid' ? (
-            <XStack flexWrap="wrap" justifyContent="space-between" gap="$3">
+            <XStack flexWrap="wrap" justifyContent="space-between">
               {filteredDogs.map(renderDogCard)}
             </XStack>
           ) : (

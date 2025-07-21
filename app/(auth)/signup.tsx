@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Alert, Image } from 'react-native'
+import { Alert, Image, Keyboard, KeyboardAvoidingView, Platform } from 'react-native'
 import {
   YStack,
   XStack,
@@ -21,9 +21,18 @@ export default function SignUpScreen() {
   const [fullName, setFullName] = useState('')
   const [loading, setLoading] = useState(false)
   const [selectedZone, setSelectedZone] = useState<string>('')
+  const [keyboardVisible, setKeyboardVisible] = useState(false)
   const { signUp } = useAuth()
 
   useEffect(() => {
+    // Setup keyboard listeners
+    const keyboardShowListener = Keyboard.addListener('keyboardDidShow', () => {
+      setKeyboardVisible(true)
+    })
+    const keyboardHideListener = Keyboard.addListener('keyboardDidHide', () => {
+      setKeyboardVisible(false)
+    })
+
     // Get the selected rescue zone from AsyncStorage (should be set from location-selection screen)
     const getSelectedZone = async () => {
       try {
@@ -42,6 +51,11 @@ export default function SignUpScreen() {
       }
     }
     getSelectedZone()
+
+    return () => {
+      keyboardShowListener?.remove()
+      keyboardHideListener?.remove()
+    }
   }, [])
 
   const handleSignUp = async () => {
@@ -96,17 +110,22 @@ export default function SignUpScreen() {
   }
 
   return (
-    <ScrollView
-      flex={1}
-      backgroundColor="linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
-      contentContainerStyle={{
-        flexGrow: 1,
-        justifyContent: 'center',
-        paddingHorizontal: 32,
-        paddingVertical: 48,
-        background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)'
-      }}
+    <KeyboardAvoidingView 
+      style={{ flex: 1 }}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
+      <ScrollView
+        flex={1}
+        backgroundColor="linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)"
+        contentContainerStyle={{
+          flexGrow: 1,
+          justifyContent: keyboardVisible ? 'flex-start' : 'center',
+          paddingHorizontal: 32,
+          paddingVertical: keyboardVisible ? 20 : 48,
+        }}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
       <YStack gap="$6" maxWidth={400} alignSelf="center" width="100%">
         {/* Logo Section */}
         <YStack alignItems="center" marginBottom="$8">
@@ -280,6 +299,7 @@ export default function SignUpScreen() {
           </Button>
         </YStack>
       </YStack>
-    </ScrollView>
+      </ScrollView>
+    </KeyboardAvoidingView>
   )
 }

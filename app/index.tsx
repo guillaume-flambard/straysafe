@@ -10,9 +10,6 @@ export default function IndexScreen() {
   useEffect(() => {
     const checkInitialRoute = async () => {
       try {
-        // TEMPORARY: Clear AsyncStorage to test location selection screen
-        await AsyncStorage.removeItem('selected_rescue_zone')
-        
         // Check if user has selected a rescue zone
         const selectedZone = await AsyncStorage.getItem('selected_rescue_zone')
         

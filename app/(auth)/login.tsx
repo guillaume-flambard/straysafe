@@ -1,21 +1,18 @@
 import React, { useState, useEffect } from 'react'
-import { Alert, Image } from 'react-native'
+import { Alert, Image, Keyboard, KeyboardAvoidingView, Platform } from 'react-native'
 import {
   YStack,
   XStack,
   Text,
   Button,
   Input,
-  Card,
-  H1,
-  H2,
   Spinner,
-  useTheme
+  ScrollView
 } from 'tamagui'
 import { useAuth } from '../../contexts/AuthContext'
 import { supabase } from '../../lib/supabase'
 import { router } from 'expo-router'
-import { LogIn, Fingerprint, Scan } from 'lucide-react-native'
+import { LogIn } from 'lucide-react-native'
 import * as LocalAuthentication from 'expo-local-authentication'
 import * as SecureStore from 'expo-secure-store'
 
@@ -23,108 +20,59 @@ export default function LoginScreen() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
-  const [biometricLoading, setBiometricLoading] = useState(false)
-  const [biometricAvailable, setBiometricAvailable] = useState(false)
-  const [hasStoredCredentials, setHasStoredCredentials] = useState(false)
-  const [biometricType, setBiometricType] = useState('')
+  const [keyboardVisible, setKeyboardVisible] = useState(false)
   const { signIn } = useAuth()
-  const theme = useTheme()
 
   useEffect(() => {
-    checkBiometricAvailability()
-    checkStoredCredentials()
+    // Setup keyboard listeners
+    const keyboardShowListener = Keyboard.addListener('keyboardDidShow', () => {
+      setKeyboardVisible(true)
+    })
+    const keyboardHideListener = Keyboard.addListener('keyboardDidHide', () => {
+      setKeyboardVisible(false)
+    })
+
+    // Check and setup biometrics
+    setupBiometrics()
+
+    return () => {
+      keyboardShowListener?.remove()
+      keyboardHideListener?.remove()
+    }
   }, [])
 
-  const checkBiometricAvailability = async () => {
+  const setupBiometrics = async () => {
     try {
       const compatible = await LocalAuthentication.hasHardwareAsync()
       const enrolled = await LocalAuthentication.isEnrolledAsync()
-      const supportedTypes = await LocalAuthentication.supportedAuthenticationTypesAsync()
-      
-      // Types: 1 = Face ID, 2 = Touch ID, 3 = Iris (Android)
-      const hasFaceID = supportedTypes.includes(LocalAuthentication.AuthenticationType.FACIAL_RECOGNITION)
-      const hasTouchID = supportedTypes.includes(LocalAuthentication.AuthenticationType.FINGERPRINT)
-      
-      console.log('Biometric check:', { 
-        compatible, 
-        enrolled, 
-        supportedTypes, 
-        hasFaceID, 
-        hasTouchID 
-      })
-      
-      setBiometricAvailable(compatible && enrolled && (hasFaceID || hasTouchID))
-      
-      // Set biometric type for UI display
-      if (hasFaceID) {
-        setBiometricType('Face ID')
-      } else if (hasTouchID) {
-        setBiometricType('Touch ID')
-      } else {
-        setBiometricType('Biometric')
-      }
-    } catch (error) {
-      console.error('Error checking biometric availability:', error)
-    }
-  }
-
-  const checkStoredCredentials = async () => {
-    try {
       const storedEmail = await SecureStore.getItemAsync('stored_email')
       const storedPassword = await SecureStore.getItemAsync('stored_password')
-      const hasStored = !!(storedEmail && storedPassword)
       
-      console.log('Stored credentials check:', { hasStored, hasEmail: !!storedEmail, hasPassword: !!storedPassword })
-      setHasStoredCredentials(hasStored)
-      
+      // Auto-fill email if stored
       if (storedEmail) {
         setEmail(storedEmail)
       }
-    } catch (error) {
-      console.error('Error checking stored credentials:', error)
-    }
-  }
-
-  const authenticateWithBiometrics = async () => {
-    try {
-      setBiometricLoading(true)
       
-      const result = await LocalAuthentication.authenticateAsync({
-        promptMessage: 'Sign in to StraySafe',
-        cancelLabel: 'Cancel',
-        disableDeviceFallback: true, // Force biometric only, no passcode fallback
-        fallbackLabel: '', // Remove fallback option
-      })
+      // Auto-authenticate if biometrics available and credentials stored
+      if (compatible && enrolled && storedEmail && storedPassword) {
+        // Small delay to let UI render
+        setTimeout(async () => {
+          const result = await LocalAuthentication.authenticateAsync({
+            promptMessage: 'Sign in to StraySafe',
+            cancelLabel: 'Use Password',
+            disableDeviceFallback: false,
+          })
 
-      if (result.success) {
-        // Retrieve stored credentials
-        const storedEmail = await SecureStore.getItemAsync('stored_email')
-        const storedPassword = await SecureStore.getItemAsync('stored_password')
-        
-        if (storedEmail && storedPassword) {
-          const { error } = await signIn(storedEmail, storedPassword)
-          
-          if (error) {
-            Alert.alert('Error', 'Automatic login failed: ' + error.message)
-          } else {
-            router.replace('/(tabs)')
+          if (result.success) {
+            const { error } = await signIn(storedEmail, storedPassword)
+            if (!error) {
+              router.replace('/(tabs)')
+            }
           }
-        } else {
-          // Fallback: show regular login if no stored credentials
-          Alert.alert(
-            'No stored credentials', 
-            'Please sign in with your email and password to enable biometric authentication.',
-            [{ text: 'OK' }]
-          )
-        }
-      } else if (result.error) {
-        Alert.alert('Authentication cancelled', result.error)
+        }, 500)
       }
     } catch (error) {
-      console.error('Biometric authentication error:', error)
-      Alert.alert('Error', 'Biometric authentication failed')
-    } finally {
-      setBiometricLoading(false)
+      console.error('Biometric setup error:', error)
     }
   }
 
@@ -173,7 +121,6 @@ export default function LoginScreen() {
       try {
         await SecureStore.setItemAsync('stored_email', email)
         await SecureStore.setItemAsync('stored_password', password)
-        setHasStoredCredentials(true)
       } catch (storeError) {
         console.error('Error storing credentials:', storeError)
       }
@@ -184,16 +131,22 @@ export default function LoginScreen() {
   }
 
   return (
-    <YStack 
-      flex={1} 
-      backgroundColor="linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
-      justifyContent="center" 
-      paddingHorizontal="$8"
-      paddingVertical="$12"
-      style={{
-        background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)'
-      }}
+    <KeyboardAvoidingView 
+      style={{ flex: 1 }}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
+      <ScrollView
+        flex={1}
+        backgroundColor="linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)"
+        contentContainerStyle={{
+          flexGrow: 1,
+          justifyContent: keyboardVisible ? 'flex-start' : 'center',
+          paddingHorizontal: 32,
+          paddingVertical: keyboardVisible ? 20 : 48,
+        }}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
       {/* Logo Section */}
       <YStack alignItems="center" marginBottom="$12">
         <Image 
@@ -271,102 +224,6 @@ export default function LoginScreen() {
             }}
           />
           
-          {/* Debug info - remove in production */}
-          <Text fontSize="$2" color="$gray9" textAlign="center">
-            {biometricType}: {biometricAvailable ? '✅' : '❌'} | Stored: {hasStoredCredentials ? '✅' : '❌'}
-          </Text>
-          
-          {/* Biometric Authentication Buttons */}
-          {biometricAvailable && (
-            <XStack gap="$3" justifyContent="center" alignItems="center">
-              {/* Face ID Button - only show if Face ID is available */}
-              {biometricType === 'Face ID' && (
-                <Button
-                  size="$3"
-                  circular
-                  backgroundColor="transparent"
-                  borderColor="#6b7280"
-                  borderWidth={1}
-                  onPress={authenticateWithBiometrics}
-                  disabled={biometricLoading}
-                  hoverStyle={{ backgroundColor: '#f3f4f6' }}
-                  pressStyle={{ backgroundColor: '#e5e7eb' }}
-                  padding="$3"
-                >
-                  {biometricLoading ? (
-                    <Spinner size="small" color="#6b7280" />
-                  ) : (
-                    <Scan size={20} color="#6b7280" />
-                  )}
-                </Button>
-              )}
-              
-              {/* Touch ID Button - only show if Touch ID is available */}
-              {biometricType === 'Touch ID' && (
-                <Button
-                  size="$3"
-                  circular
-                  backgroundColor="transparent"
-                  borderColor="#6b7280"
-                  borderWidth={1}
-                  onPress={authenticateWithBiometrics}
-                  disabled={biometricLoading}
-                  hoverStyle={{ backgroundColor: '#f3f4f6' }}
-                  pressStyle={{ backgroundColor: '#e5e7eb' }}
-                  padding="$3"
-                >
-                  {biometricLoading ? (
-                    <Spinner size="small" color="#6b7280" />
-                  ) : (
-                    <Fingerprint size={20} color="#6b7280" />
-                  )}
-                </Button>
-              )}
-              
-              {/* Both available - show both buttons */}
-              {biometricType === 'Biometric' && (
-                <>
-                  <Button
-                    size="$3"
-                    circular
-                    backgroundColor="transparent"
-                    borderColor="#6b7280"
-                    borderWidth={1}
-                    onPress={authenticateWithBiometrics}
-                    disabled={biometricLoading}
-                    hoverStyle={{ backgroundColor: '#f3f4f6' }}
-                    pressStyle={{ backgroundColor: '#e5e7eb' }}
-                    padding="$3"
-                  >
-                    {biometricLoading ? (
-                      <Spinner size="small" color="#6b7280" />
-                    ) : (
-                      <Scan size={20} color="#6b7280" />
-                    )}
-                  </Button>
-                  
-                  <Button
-                    size="$3"
-                    circular
-                    backgroundColor="transparent"
-                    borderColor="#6b7280"
-                    borderWidth={1}
-                    onPress={authenticateWithBiometrics}
-                    disabled={biometricLoading}
-                    hoverStyle={{ backgroundColor: '#f3f4f6' }}
-                    pressStyle={{ backgroundColor: '#e5e7eb' }}
-                    padding="$3"
-                  >
-                    {biometricLoading ? (
-                      <Spinner size="small" color="#6b7280" />
-                    ) : (
-                      <Fingerprint size={20} color="#6b7280" />
-                    )}
-                  </Button>
-                </>
-              )}
-            </XStack>
-          )}
           
           <Button
             size="$5"
@@ -417,7 +274,8 @@ export default function LoginScreen() {
           </Button>
         </YStack>
       </YStack>
-    </YStack>
+      </ScrollView>
+    </KeyboardAvoidingView>
   )
 }
 

@@ -99,6 +99,37 @@ export default function UsersScreen() {
     });
   };
 
+  const handleRoleChange = async (userId: string, newRole: string) => {
+    Alert.alert(
+      'Change Role',
+      `Are you sure you want to change this user's role to ${newRole}?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Confirm',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              const { error } = await supabase
+                .from('users')
+                .update({ role: newRole })
+                .eq('id', userId);
+
+              if (error) {
+                Alert.alert('Error', 'Failed to update user role');
+              } else {
+                Alert.alert('Success', 'User role updated successfully');
+                fetchUsers(); // Refresh the list
+              }
+            } catch (error) {
+              Alert.alert('Error', 'An unexpected error occurred');
+            }
+          }
+        }
+      ]
+    );
+  };
+
   const renderUser = (item: User) => (
     <Card
       key={item.id}
@@ -106,48 +137,116 @@ export default function UsersScreen() {
       size="$4"
       bordered
       animation="bouncy"
-      scale={0.9}
-      hoverStyle={{ scale: 0.925 }}
-      pressStyle={{ scale: 0.875 }}
-      backgroundColor="$backgroundSoft"
-      borderColor="$borderColor"
+      scale={1}
+      hoverStyle={{ scale: 1.02 }}
+      pressStyle={{ scale: 0.98 }}
+      backgroundColor="rgba(255, 255, 255, 0.95)"
+      borderColor="rgba(203, 213, 225, 0.6)"
       marginBottom="$3"
-      padding="$4"
+      padding="$5"
+      borderRadius={16}
+      shadowColor="rgba(0, 0, 0, 0.1)"
+      shadowOffset={{ width: 0, height: 4 }}
+      shadowOpacity={0.15}
+      shadowRadius={8}
+      elevation={6}
     >
       <XStack alignItems="center" gap="$4">
-        <Avatar circular size="$6" backgroundColor="$blue4">
-          <Text fontFamily="$body" fontSize="$5" color="#3b82f6">
-            {getInitials(item.full_name, item.email)}
-          </Text>
-        </Avatar>
-
-        <YStack flex={1} gap="$1">
-          <XStack justifyContent="space-between" alignItems="center">
-            <Text fontSize="$5" fontWeight="bold" color="$color12" numberOfLines={1} flex={1}>
-              {item.full_name || 'Anonymous User'}
+        {/* Avatar with role-colored border */}
+        <View position="relative">
+          <Avatar circular size="$7" backgroundColor="$blue4">
+            <Text fontFamily="$body" fontSize="$5" color="#3b82f6" fontWeight="bold">
+              {getInitials(item.full_name, item.email)}
             </Text>
+          </Avatar>
+          {/* Role indicator dot */}
+          <View
+            position="absolute"
+            bottom={-2}
+            right={-2}
+            backgroundColor={getRoleColor(item.role)}
+            borderRadius={12}
+            width={24}
+            height={24}
+            justifyContent="center"
+            alignItems="center"
+            borderWidth={2}
+            borderColor="white"
+          >
+            <Text fontSize="$1">{getRoleIcon(item.role)}</Text>
+          </View>
+        </View>
+
+        <YStack flex={1} gap="$2">
+          {/* Name and role badge */}
+          <XStack justifyContent="space-between" alignItems="flex-start">
+            <YStack flex={1}>
+              <Text fontSize="$5" fontWeight="700" color="#1e293b" numberOfLines={1}>
+                {item.full_name || 'Anonymous User'}
+              </Text>
+              <Text fontSize="$3" color="#64748b" marginTop="$0.5">
+                {item.email}
+              </Text>
+            </YStack>
+            
             <XStack alignItems="center" gap="$2">
-              <Text fontSize="$4">{getRoleIcon(item.role)}</Text>
               <View
-                backgroundColor={getRoleColor(item.role)}
-                paddingHorizontal="$2"
+                backgroundColor={`${getRoleColor(item.role)}15`}
+                borderColor={getRoleColor(item.role)}
+                borderWidth={1}
+                paddingHorizontal="$3"
                 paddingVertical="$1"
-                borderRadius="$3"
+                borderRadius={8}
               >
-                <Text fontSize="$1" color="white" fontWeight="700" textTransform="uppercase">
+                <Text 
+                  fontSize="$2" 
+                  color={getRoleColor(item.role)} 
+                  fontWeight="700" 
+                  textTransform="uppercase"
+                >
                   {item.role}
                 </Text>
               </View>
             </XStack>
           </XStack>
 
-          <Text fontSize="$3" color="#6b7280">
-            {item.email}
-          </Text>
-
-          <Text fontSize="$2" color="$color10">
-            Joined {formatDate(item.created_at)}
-          </Text>
+          {/* Join date and actions */}
+          <XStack justifyContent="space-between" alignItems="center">
+            <Text fontSize="$2" color="#94a3b8">
+              Joined {formatDate(item.created_at)}
+            </Text>
+            
+            {/* Role management buttons */}
+            {item.id !== userProfile?.id && (
+              <XStack gap="$2">
+                {['viewer', 'volunteer', 'admin'].map((role) => (
+                  item.role !== role && (
+                    <Button
+                      key={role}
+                      size="$2"
+                      variant="outlined"
+                      backgroundColor="transparent"
+                      borderColor={getRoleColor(role)}
+                      borderWidth={1}
+                      color={getRoleColor(role)}
+                      borderRadius={6}
+                      paddingHorizontal="$2"
+                      onPress={() => handleRoleChange(item.id, role)}
+                      hoverStyle={{ backgroundColor: `${getRoleColor(role)}10` }}
+                      pressStyle={{ backgroundColor: `${getRoleColor(role)}20` }}
+                    >
+                      <XStack alignItems="center" gap="$1">
+                        <Text fontSize="$1">{getRoleIcon(role)}</Text>
+                        <Text fontSize="$1" fontWeight="600" textTransform="capitalize">
+                          {role}
+                        </Text>
+                      </XStack>
+                    </Button>
+                  )
+                ))}
+              </XStack>
+            )}
+          </XStack>
         </YStack>
       </XStack>
     </Card>
@@ -220,9 +319,8 @@ export default function UsersScreen() {
 
   return (
     <YStack flex={1} backgroundColor="$background">
-      <XStack
-        justifyContent="space-between"
-        alignItems="center"
+      {/* Modern Header */}
+      <YStack
         paddingHorizontal="$6"
         paddingVertical="$4"
         paddingTop="$12"
@@ -236,25 +334,74 @@ export default function UsersScreen() {
         shadowOpacity={0.15}
         shadowRadius={12}
         elevation={8}
+        gap="$3"
       >
-        <Text fontSize="$8" fontWeight="bold" color="$color12">
-          Users
-        </Text>
-        <Button
-          icon={UserPlus}
-          size="$4"
-          variant="outlined"
-          backgroundColor="#3b82f6"
-          borderColor="#3b82f6"
-          color="white"
-          borderRadius="$button"
-          onPress={() => Alert.alert('Invite User', 'This feature will be implemented soon!')}
-          hoverStyle={{ backgroundColor: '$blue11' }}
-          pressStyle={{ backgroundColor: '$blue9' }}
-        >
-          + Invite
-        </Button>
-      </XStack>
+        <XStack justifyContent="space-between" alignItems="center">
+          <YStack flex={1}>
+            <Text fontSize="$8" fontWeight="bold" color="$gray12">
+              Team Management
+            </Text>
+            <Text fontSize="$4" color="#6b7280">
+              Manage users and permissions for this location
+            </Text>
+          </YStack>
+          
+          <Button
+            icon={UserPlus}
+            size="$4"
+            variant="outlined"
+            backgroundColor="#3b82f6"
+            borderColor="#3b82f6"
+            color="white"
+            borderRadius="$button"
+            onPress={() => Alert.alert('Invite User', 'This feature will be implemented soon!')}
+            hoverStyle={{ backgroundColor: '$blue11' }}
+            pressStyle={{ backgroundColor: '$blue9' }}
+          >
+            Invite User
+          </Button>
+        </XStack>
+        
+        {/* Quick Stats */}
+        <XStack gap="$4" marginTop="$2">
+          <XStack alignItems="center" gap="$2">
+            <View
+              backgroundColor="#dc2626"
+              borderRadius={6}
+              padding="$1"
+            >
+              <Text fontSize="$2">👑</Text>
+            </View>
+            <Text fontSize="$3" color="#6b7280" fontWeight="500">
+              {users.filter(u => u.role === 'admin').length} admins
+            </Text>
+          </XStack>
+          <XStack alignItems="center" gap="$2">
+            <View
+              backgroundColor="#2563eb"
+              borderRadius={6}
+              padding="$1"
+            >
+              <Text fontSize="$2">🤝</Text>
+            </View>
+            <Text fontSize="$3" color="#6b7280" fontWeight="500">
+              {users.filter(u => u.role === 'volunteer').length} volunteers
+            </Text>
+          </XStack>
+          <XStack alignItems="center" gap="$2">
+            <View
+              backgroundColor="#059669"
+              borderRadius={6}
+              padding="$1"
+            >
+              <Text fontSize="$2">🩺</Text>
+            </View>
+            <Text fontSize="$3" color="#6b7280" fontWeight="500">
+              {users.filter(u => u.role === 'vet').length} vets
+            </Text>
+          </XStack>
+        </XStack>
+      </YStack>
       {/* Filter Buttons */}
       <ScrollView horizontal showsHorizontalScrollIndicator={false} paddingVertical="$4">
         <XStack gap="$2" paddingHorizontal="$4">
