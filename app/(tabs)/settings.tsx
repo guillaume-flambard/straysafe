@@ -269,7 +269,7 @@ export default function SettingsScreen() {
                 borderColor="$blue8"
               >
                 <Text fontSize="$3" color="$blue11" fontWeight="500">
-                  You'll see dogs from:
+                  You&apos;ll see dogs from:
                 </Text>
                 <Text fontSize="$4" color="$blue12" fontWeight="bold" marginTop="$1">
                   📍 {selectedLocationName.name}, {selectedCountry}

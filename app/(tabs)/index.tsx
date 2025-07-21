@@ -92,16 +92,42 @@ export default function DogsScreen() {
     if (!userProfile) return;
 
     setLoading(true);
-    const { data, error } = await supabase
+    
+    let query = supabase
       .from('dogs')
       .select('*')
-      .eq('location_id', userProfile.location_id)
-      .order('created_at', { ascending: false });
+      .eq('location_id', userProfile.location_id);
+
+    // Apply role-based filtering
+    switch (userProfile.role) {
+      case 'viewer':
+        // Viewers can only see available dogs (not hidden, sensitive, or deceased)
+        query = query.in('status', ['available', 'fostered', 'adopted', 'injured']);
+        break;
+        
+      case 'volunteer':
+        // Volunteers can see dogs they're assigned to + available dogs
+        query = query.or(`rescuer_id.eq.${userProfile.id},foster_id.eq.${userProfile.id},status.in.(available,fostered,adopted,injured)`);
+        break;
+        
+      case 'vet':
+        // Vets can see dogs assigned to them + dogs needing medical attention
+        query = query.or(`vet_id.eq.${userProfile.id},status.in.(injured,available,fostered)`);
+        break;
+        
+      case 'admin':
+        // Admins can see all dogs (no additional filtering)
+        break;
+    }
+
+    query = query.order('created_at', { ascending: false });
+
+    const { data, error } = await query;
 
     if (error) {
       console.error('Error fetching dogs:', error);
     } else {
-      console.log('Fetched dogs:', data?.length || 0, 'dogs');
+      console.log('Fetched dogs:', data?.length || 0, 'dogs for role:', userProfile.role);
       setDogs(data || []);
     }
     setLoading(false);

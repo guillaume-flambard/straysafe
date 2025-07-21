@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Alert, Image } from 'react-native'
 import {
   YStack,
@@ -11,7 +11,8 @@ import {
 } from 'tamagui'
 import { useAuth } from '../../contexts/AuthContext'
 import { router } from 'expo-router'
-import { UserPlus } from 'lucide-react-native'
+import { UserPlus, MapPin } from 'lucide-react-native'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 
 export default function SignUpScreen() {
   const [email, setEmail] = useState('')
@@ -19,11 +20,52 @@ export default function SignUpScreen() {
   const [confirmPassword, setConfirmPassword] = useState('')
   const [fullName, setFullName] = useState('')
   const [loading, setLoading] = useState(false)
+  const [selectedZone, setSelectedZone] = useState<string>('koh-phangan')
   const { signUp } = useAuth()
+
+  // Available locations
+  const locations = [
+    { id: 'koh-phangan', name: 'Koh Phangan', country: 'Thailand', flag: '🇹🇭' },
+    { id: 'chiang-mai', name: 'Chiang Mai', country: 'Thailand', flag: '🇹🇭' },
+    { id: 'bali', name: 'Bali', country: 'Indonesia', flag: '🇮🇩' },
+    { id: 'athens', name: 'Athens', country: 'Greece', flag: '🇬🇷' },
+  ]
+
+  const handleLocationSelect = async (locationId: string) => {
+    setSelectedZone(locationId)
+    // Save to AsyncStorage for app-wide access
+    try {
+      await AsyncStorage.setItem('selected_rescue_zone', locationId)
+    } catch (error) {
+      console.error('Error saving selected zone:', error)
+    }
+  }
+
+  useEffect(() => {
+    // Get the selected rescue zone from AsyncStorage if available
+    const getSelectedZone = async () => {
+      try {
+        const zone = await AsyncStorage.getItem('selected_rescue_zone')
+        if (zone && locations.find(loc => loc.id === zone)) {
+          setSelectedZone(zone)
+        }
+        // If no zone in storage or invalid zone, keep default 'koh-phangan'
+      } catch (error) {
+        console.error('Error getting selected zone:', error)
+        // Keep default on error
+      }
+    }
+    getSelectedZone()
+  }, [])
 
   const handleSignUp = async () => {
     if (!email || !password || !fullName || !confirmPassword) {
       Alert.alert('Error', 'Please fill in all fields')
+      return
+    }
+
+    if (!selectedZone) {
+      Alert.alert('Error', 'Please select a rescue location')
       return
     }
 
@@ -37,13 +79,19 @@ export default function SignUpScreen() {
       return
     }
 
+    console.log('=== SIGNUP DEBUG ===')
+    console.log('Email:', email)
+    console.log('Full Name:', fullName)
+    console.log('Selected Zone from AsyncStorage:', selectedZone)
+
     setLoading(true)
     
     try {
-      const { error } = await signUp(email, password, fullName)
+      const { error } = await signUp(email, password, fullName, selectedZone)
       
       if (error) {
-        Alert.alert('Error', error.message)
+        console.error('Signup error:', error)
+        Alert.alert('Database error saving new user', error.message || 'Unknown error occurred')
       } else {
         Alert.alert(
           'Success', 
@@ -54,7 +102,8 @@ export default function SignUpScreen() {
         )
       }
     } catch (error) {
-      Alert.alert('Error', 'An unexpected error occurred')
+      console.error('Unexpected signup error:', error)
+      Alert.alert('Error', 'An unexpected error occurred: ' + (error as Error).message)
     }
     
     setLoading(false)
@@ -124,6 +173,45 @@ export default function SignUpScreen() {
               shadowOpacity: 0.2
             }}
           />
+
+          {/* Location Selection */}
+          <YStack gap="$2">
+            <XStack alignItems="center" gap="$2" paddingHorizontal="$2">
+              <MapPin size={16} color="#6b7280" />
+              <Text fontSize="$3" color="#6b7280" fontWeight="500">
+                Rescue Location
+              </Text>
+            </XStack>
+            <XStack gap="$2" flexWrap="wrap">
+              {locations.map((location) => (
+                <Button
+                  key={location.id}
+                  size="$3"
+                  variant="outlined"
+                  backgroundColor={selectedZone === location.id ? "#3b82f6" : "rgba(255, 255, 255, 0.9)"}
+                  borderColor={selectedZone === location.id ? "#3b82f6" : "rgba(203, 213, 225, 0.6)"}
+                  color={selectedZone === location.id ? "white" : "#6b7280"}
+                  borderRadius={8}
+                  onPress={() => handleLocationSelect(location.id)}
+                  hoverStyle={{ 
+                    backgroundColor: selectedZone === location.id ? '#1d4ed8' : 'rgba(255, 255, 255, 0.95)' 
+                  }}
+                  pressStyle={{ 
+                    backgroundColor: selectedZone === location.id ? '#2563eb' : 'rgba(243, 244, 246, 0.9)' 
+                  }}
+                  flex={1}
+                  minWidth="48%"
+                >
+                  <XStack alignItems="center" gap="$1">
+                    <Text fontSize="$2">{location.flag}</Text>
+                    <Text fontSize="$3" fontWeight="500">
+                      {location.name}
+                    </Text>
+                  </XStack>
+                </Button>
+              ))}
+            </XStack>
+          </YStack>
           
           <Input
             size="$5"

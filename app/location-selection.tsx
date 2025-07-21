@@ -124,7 +124,7 @@ export default function LocationSelectionScreen() {
           Select your rescue zone
         </H2>
         <Text fontSize="$4" color="$color10" marginTop="$2" textAlign="center">
-          Choose the region where you'll be helping stray dogs
+          Choose the region where you&apos;ll be helping stray dogs
         </Text>
       </Card>
 

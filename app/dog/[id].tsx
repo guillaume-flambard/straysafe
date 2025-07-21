@@ -39,6 +39,8 @@ export default function DogProfileScreen() {
   }, [id, userProfile]);
 
   const fetchDogDetails = async () => {
+    if (!userProfile) return;
+
     const { data, error } = await supabase
       .from('dogs')
       .select('*')
@@ -49,21 +51,83 @@ export default function DogProfileScreen() {
       console.error('Error fetching dog:', error);
       Alert.alert('Error', 'Failed to load dog details');
       router.back();
-    } else {
-      setDog(data);
+      return;
     }
+
+    // Check if user has access to this dog based on role and status
+    const canViewDog = () => {
+      switch (userProfile.role) {
+        case 'viewer':
+          // Viewers cannot see hidden dogs
+          return data.status !== 'hidden';
+          
+        case 'volunteer':
+          // Volunteers can see dogs they're assigned to or non-hidden dogs
+          return data.rescuer_id === userProfile.id || 
+                 data.foster_id === userProfile.id || 
+                 data.status !== 'hidden';
+          
+        case 'vet':
+          // Vets can see dogs assigned to them or dogs needing medical attention
+          return data.vet_id === userProfile.id || 
+                 ['injured', 'available', 'fostered'].includes(data.status);
+          
+        case 'admin':
+          // Admins can see all dogs
+          return true;
+          
+        default:
+          return false;
+      }
+    };
+
+    if (!canViewDog()) {
+      Alert.alert('Access Denied', 'You do not have permission to view this dog profile.');
+      router.back();
+      return;
+    }
+
+    setDog(data);
   };
 
   const fetchDogEvents = async () => {
-    const { data, error } = await supabase
+    if (!userProfile) return;
+
+    let query = supabase
       .from('events')
       .select('*')
-      .eq('dog_id', id)
-      .order('created_at', { ascending: false });
+      .eq('dog_id', id);
+
+    // Apply privacy filtering based on user role
+    switch (userProfile.role) {
+      case 'viewer':
+        // Viewers can only see public events
+        query = query.eq('privacy_level', 'public');
+        break;
+        
+      case 'volunteer':
+        // Volunteers can see public and private events, but not sensitive
+        query = query.in('privacy_level', ['public', 'private']);
+        break;
+        
+      case 'vet':
+        // Vets can see public and private events (medical focus)
+        query = query.in('privacy_level', ['public', 'private']);
+        break;
+        
+      case 'admin':
+        // Admins can see all events including sensitive
+        break;
+    }
+
+    query = query.order('created_at', { ascending: false });
+
+    const { data, error } = await query;
 
     if (error) {
       console.error('Error fetching events:', error);
     } else {
+      console.log('Fetched events:', data?.length || 0, 'events for role:', userProfile.role);
       setEvents(data || []);
     }
   };
@@ -269,9 +333,23 @@ export default function DogProfileScreen() {
         {/* Notes */}
         {dog.notes && (
           <YStack gap="$3" marginBottom="$4">
-            <H4 color="$color12" fontSize="$5" fontWeight="600">
-              📝 Notes
-            </H4>
+            <XStack alignItems="center" gap="$2">
+              <H4 color="$color12" fontSize="$5" fontWeight="600">
+                📝 Notes
+              </H4>
+              {userProfile?.role === 'viewer' && (
+                <View
+                  backgroundColor="$orange3"
+                  paddingHorizontal="$2"
+                  paddingVertical="$1"
+                  borderRadius="$2"
+                >
+                  <Text fontSize="$1" color="$orange11" fontWeight="600">
+                    Limited View
+                  </Text>
+                </View>
+              )}
+            </XStack>
             <Card
               backgroundColor="$backgroundStrong"
               borderRadius="$glass"
@@ -320,9 +398,35 @@ export default function DogProfileScreen() {
         {/* Timeline */}
         <YStack gap="$3" marginBottom="$4">
           <XStack justifyContent="space-between" alignItems="center">
-            <H4 color="$color12" fontSize="$5" fontWeight="600">
-              📅 Timeline
-            </H4>
+            <XStack alignItems="center" gap="$2">
+              <H4 color="$color12" fontSize="$5" fontWeight="600">
+                📅 Timeline
+              </H4>
+              {userProfile?.role === 'viewer' && (
+                <View
+                  backgroundColor="$blue3"
+                  paddingHorizontal="$2"
+                  paddingVertical="$1"
+                  borderRadius="$2"
+                >
+                  <Text fontSize="$1" color="$blue11" fontWeight="600">
+                    Public Only
+                  </Text>
+                </View>
+              )}
+              {userProfile?.role === 'volunteer' && (
+                <View
+                  backgroundColor="$green3"
+                  paddingHorizontal="$2"
+                  paddingVertical="$1"
+                  borderRadius="$2"
+                >
+                  <Text fontSize="$1" color="$green11" fontWeight="600">
+                    Standard Access
+                  </Text>
+                </View>
+              )}
+            </XStack>
             {canAddEvent && (
               <Button
                 size="$3"
@@ -363,6 +467,30 @@ export default function DogProfileScreen() {
                       <Text fontSize="$4" fontWeight="600" color="$color12" textTransform="capitalize">
                         {event.event_type}
                       </Text>
+                      {event.privacy_level === 'sensitive' && userProfile?.role === 'admin' && (
+                        <View
+                          backgroundColor="$red3"
+                          paddingHorizontal="$2"
+                          paddingVertical="$1"
+                          borderRadius="$2"
+                        >
+                          <Text fontSize="$1" color="$red11" fontWeight="600">
+                            SENSITIVE
+                          </Text>
+                        </View>
+                      )}
+                      {event.privacy_level === 'private' && (
+                        <View
+                          backgroundColor="$yellow3"
+                          paddingHorizontal="$2"
+                          paddingVertical="$1"
+                          borderRadius="$2"
+                        >
+                          <Text fontSize="$1" color="$yellow11" fontWeight="600">
+                            PRIVATE
+                          </Text>
+                        </View>
+                      )}
                     </XStack>
                     <Text fontSize="$3" color="$color10">
                       {formatDate(event.created_at)}

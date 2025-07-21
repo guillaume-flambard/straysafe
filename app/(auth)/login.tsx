@@ -412,7 +412,7 @@ export default function LoginScreen() {
             marginTop="$2"
           >
             <Text fontSize="$3" color="#3b82f6">
-              Don't have an account? Sign up
+              Don&apos;t have an account? Sign up
             </Text>
           </Button>
         </YStack>
